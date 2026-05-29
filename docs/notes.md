@@ -124,7 +124,7 @@ semantics from the others.
 ```
 moonphase/
 ├── .gitignore               # excludes .venv, caches, *.bsp kernels
-├── LICENSE                  # MIT
+├── LICENSE                  # AGPL-3.0-or-later
 ├── README.md                # quick-start oriented
 ├── pyproject.toml           # setuptools, console script, optional [dev]
 ├── docs/
