@@ -8,13 +8,13 @@ version = "0.1.0"
 description = "Compute and chart arbitrary microphase divisions of the lunar synodic cycle."
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "MIT" }
+license = { text = "AGPL-3.0-or-later" }
 authors = [{ name = "moonphase contributors" }]
 keywords = ["moon", "lunar", "phase", "ephemeris", "astronomy", "calendar"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: MIT License",
+    "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
     "Programming Language :: Python :: 3",
     "Topic :: Scientific/Engineering :: Astronomy",
 ]

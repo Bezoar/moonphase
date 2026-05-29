@@ -37,4 +37,4 @@ to `./data/` on first run; it is gitignored by default. Pass
 
 ## License
 
-MIT.
+AGPL-3.0-or-later. See `LICENSE`.

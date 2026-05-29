@@ -216,3 +216,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# moonphase: JPL ephemeris kernels (downloaded on demand, ~17 MB)
+data/*.bsp
+*.bsp

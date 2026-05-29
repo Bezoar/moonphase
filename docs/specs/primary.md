@@ -118,7 +118,8 @@ phase angle as CSV for the next decade").
 - **N3** Cold-import time (no kernel load) under 500 ms on a modern
   laptop.
 - **N4** Repository remains under 1 MB excluding the ephemeris kernel.
-- **N5** MIT-licensed, publishable to PyPI without additional consents.
+- **N5** AGPL-3.0-or-later licensed; downstream service operators must offer
+  source for modified network deployments.
 - **N6** Determinism: identical CLI invocations on the same kernel
   produce byte-identical output.
 
