@@ -166,3 +166,48 @@ def test_almanac_empty_events_raises(tmp_path):
     import pytest
     with pytest.raises(ValueError):
         renderers.get("almanac")(r, str(tmp_path / "x.png"))
+
+
+def _heatmap_report(days=70, options=None):
+    from datetime import timedelta
+    samples = []
+    for i in range(days * 24):
+        when = T0 + timedelta(hours=i)
+        ang = (12.19 * (when - T0).total_seconds() / 86400.0) % 360.0
+        samples.append(PhaseSample(when=when, angle_deg=ang,
+                                   microphase=int(ang / 22.5 + 0.5) % 16))
+    return Report(scheme=MicrophaseScheme.from_divisions(16), mode="series",
+                  samples=samples, options=options)
+
+
+def test_heatmap_registered_series_only():
+    assert "heatmap" in renderers.available("series")
+    assert "heatmap" not in renderers.available("events")
+
+
+def test_heatmap_gregorian_illumination_png(tmp_path):
+    out = tmp_path / "h.png"
+    renderers.get("heatmap")(_heatmap_report(options={"tint": "illumination",
+                             "calendar": "gregorian"}), str(out))
+    assert out.exists() and out.stat().st_size > 0
+
+
+def test_heatmap_index_tint_png(tmp_path):
+    out = tmp_path / "h2.png"
+    renderers.get("heatmap")(_heatmap_report(options={"tint": "index",
+                             "calendar": "gregorian"}), str(out))
+    assert out.exists() and out.stat().st_size > 0
+
+
+def test_heatmap_lunar_layout_png(tmp_path):
+    out = tmp_path / "h3.png"
+    renderers.get("heatmap")(_heatmap_report(options={"tint": "illumination",
+                             "calendar": "lunar", "lunar_anchor": "new"}), str(out))
+    assert out.exists() and out.stat().st_size > 0
+
+
+def test_heatmap_empty_samples_raises(tmp_path):
+    import pytest
+    r = Report(scheme=MicrophaseScheme.from_divisions(16), mode="series", samples=[])
+    with pytest.raises(ValueError):
+        renderers.get("heatmap")(r, str(tmp_path / "x.png"))
