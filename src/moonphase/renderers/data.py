@@ -9,12 +9,6 @@ import sys
 from . import register
 
 
-def _span(report):
-    items = report.events if report.mode == "events" else report.samples
-    items = items or []
-    return (items[0].when, items[-1].when) if items else (None, None)
-
-
 @register("csv", modes={"series", "events"})
 def render_csv(report, out):
     f = open(out, "w", newline="") if out else sys.stdout
@@ -25,6 +19,8 @@ def render_csv(report, out):
         return tz.to_display(when).isoformat()
 
     try:
+        # per-row ISO offsets carry the display timezone (no separate caption
+        # row, to stay machine-parseable)
         w = csv.writer(f)
         if report.mode == "events":
             w.writerow(["time", "target_angle_deg", "kind", "microphase_index",
@@ -47,7 +43,7 @@ def render_csv(report, out):
 def render_json(report, out):
     s = report.scheme
     tz = report.tz
-    start_utc, end_utc = _span(report)
+    start_utc, end_utc = report.span()
 
     def t(when):
         return tz.to_display(when).isoformat()

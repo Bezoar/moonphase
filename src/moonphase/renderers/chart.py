@@ -9,12 +9,6 @@ from ..naming import default_name
 from . import register
 
 
-def _span(report):
-    items = report.events if report.mode == "events" else report.samples
-    items = items or []
-    return (items[0].when, items[-1].when) if items else (None, None)
-
-
 @register("chart", modes={"series", "events"})
 def render(report, out):
     import matplotlib.dates as mdates
@@ -24,12 +18,17 @@ def render(report, out):
     step = s.step_deg
     fig, ax = plt.subplots(figsize=(12, 3.5))
     try:
+        # plot display-zone wall-clock (naive) so the x-axis matches the
+        # "times in <zone>" caption; matplotlib labels naive values verbatim
+        def _disp(when):
+            return report.tz.to_display(when).replace(tzinfo=None)
+
         sc = None
         if report.mode == "series":
             samples = report.samples or []
             if not samples:
                 raise ValueError("no samples to render")
-            times = [p.when for p in samples]
+            times = [_disp(p.when) for p in samples]
             angles = np.array([p.angle_deg for p in samples])
             sc = ax.scatter(times, angles, c=angles, cmap="twilight", s=4, marker="s")
         elif not (report.events or []):
@@ -46,7 +45,8 @@ def render(report, out):
 
         # event overlays: solid = centers, dashed orange = transitions
         for e in report.events or []:
-            ax.axvline(e.when, color=("#d98324" if e.kind == "transition" else "#5b6b8a"),
+            ax.axvline(_disp(e.when),
+                       color=("#d98324" if e.kind == "transition" else "#5b6b8a"),
                        lw=0.6, ls=("--" if e.kind == "transition" else "-"), alpha=0.7)
 
         ax.set_ylim(0, 360)
@@ -59,7 +59,7 @@ def render(report, out):
         axL.set_yticklabels([default_name(k, s) or f"{(k * step) % 360:.0f}°"
                              for k in range(s.divisions)])
 
-        start_utc, end_utc = _span(report)
+        start_utc, end_utc = report.span()
         caption = report.tz.caption(start_utc, end_utc)
         ax.set_title(f"Lunar microphases — {s.divisions} divisions ({step:.3f}° each)\n"
                      f"times in {caption}", fontsize=10)
