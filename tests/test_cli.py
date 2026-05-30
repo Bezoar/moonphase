@@ -1,3 +1,7 @@
+import os
+import time
+from contextlib import contextmanager
+
 import numpy as np
 import pytest
 
@@ -66,3 +70,49 @@ def test_main_rejects_incompatible_mode(tmp_path, monkeypatch, capsys):
     ])
     assert rc == 2
     assert "supports mode(s): events" in capsys.readouterr().err
+
+
+@contextmanager
+def _force_tz(name):
+    old = os.environ.get("TZ")
+    os.environ["TZ"] = name
+    time.tzset()
+    try:
+        yield
+    finally:
+        if old is None:
+            os.environ.pop("TZ", None)
+        else:
+            os.environ["TZ"] = old
+        time.tzset()
+
+
+@pytest.mark.skip(reason="enabled in Phase 2 Task 4 (JSON timezone field)")
+def test_main_fixed_offset_start_propagates_to_output(tmp_path, monkeypatch):
+    monkeypatch.setattr(cli_mod, "PhaseEphemeris", _LinearEph)
+    out = tmp_path / "ev.json"
+    rc = cli_mod.main([
+        "--start", "2026-01-01T00:00:00-08:00", "--end", "2026-01-31T00:00:00-08:00",
+        "--divisions", "4", "--mode", "events", "--format", "json", "--out", str(out),
+    ])
+    assert rc == 0
+    import json
+    payload = json.loads(out.read_text())
+    assert payload["timezone"] == "UTC-08:00"
+    assert payload["events"][0]["time"].endswith("-08:00")
+
+
+@pytest.mark.skip(reason="enabled in Phase 2 Task 4 (JSON timezone field)")
+def test_main_bare_date_uses_local(tmp_path, monkeypatch):
+    monkeypatch.setattr(cli_mod, "PhaseEphemeris", _LinearEph)
+    with _force_tz("America/Los_Angeles"):
+        out = tmp_path / "ev2.json"
+        rc = cli_mod.main([
+            "--start", "2026-01-01", "--end", "2026-01-31",
+            "--divisions", "4", "--mode", "events", "--format", "json", "--out", str(out),
+        ])
+        assert rc == 0
+        import json
+        payload = json.loads(out.read_text())
+        assert "local time" in payload["timezone"]
+        assert payload["events"][0]["time"].endswith("-08:00")  # Jan -> PST
