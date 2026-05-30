@@ -112,7 +112,7 @@ next decade", "the exact UTC instant of every full moon").
     its mode; multi-mode format → `series`).
   - `--transitions` — include transition points (overlay markers in series; rows in events).
   - `--tint {illumination,index}` — **heatmap only**; default `illumination`.
-  - `--calendar {gregorian,lunar}` — **heatmap (and terminal) layout**; default `gregorian`.
+  - `--calendar {gregorian,lunar}` — **heatmap layout**; default `gregorian`.
   - `--lunar-anchor {new,full}` — default `new`; only meaningful with `--calendar lunar`.
   - `--labels SPEC` — custom microphase names: inline comma list or `@file` (one per line, or JSON
     `index→name`), **sparse-merge** (blank/missing → built-in for N∈{4,8}, else index/angle).
@@ -129,18 +129,19 @@ next decade", "the exact UTC instant of every full moon").
 ### 5.6 Renderers
 > `chart`/`csv`/`json`/`terminal` shipped in Phase 1; `heatmap`, `almanac`, `--tint`, and
 > `--calendar`/`--lunar-anchor` implemented in Phase 3 (renderer-specific flags travel on
-> `Report.options`).
+> `Report.options`). `--calendar`/`--lunar-anchor` currently apply to `heatmap` only; lunar
+> layouts for `chart`/`csv`/`terminal` are a possible future enhancement.
 
 - **F6.1** A renderer is `render(report, out) -> None` where `report` is a frozen `Report`
-  (scheme, mode, samples|None, events|None, tz, labels|None).
+  (scheme, mode, samples|None, events|None, tz, labels|None, options|None).
 - **F6.2** Registration `@register(name, modes={...})`; name collisions raise; `available(mode)`
   filters by supported mode.
 - **F6.3** Built-in renderers:
   - `chart` (series, events) — analytic strip-chart; elongation 0–360° on the Y axis with **named
-    phases on the left, degrees on the right**; daily ticks + weekly date labels (lunation
-    boundaries when `--calendar lunar`); centered phase bands; solid phase-center lines, dashed
-    transition lines; phase-angle sawtooth with event overlays (filled dots = centers, orange
-    rings = transitions). File format from `--out` extension (png/svg/pdf/…).
+    phases on the left, degrees on the right**; a readable date axis; centered phase bands;
+    solid phase-center lines, dashed transition lines; phase-angle sawtooth with event overlays
+    (filled dots = centers, orange rings = transitions). File format from `--out` extension
+    (png/svg/pdf/…). *(`--calendar` is not consumed by `chart`.)*
   - `heatmap` (series) — calendar grid. `--tint illumination` (grayscale by illuminated fraction)
     or `--tint index` (distinct hue per microphase). `--calendar gregorian` → months × days, day
     cells marked with moon-disk glyphs on a dark backing chip at principal-phase days.
@@ -150,10 +151,10 @@ next decade", "the exact UTC instant of every full moon").
     transition points dashed between (when `--transitions`). Correct lit-limb geometry with
     degenerate-fraction handling (New empty, Full solid).
   - `csv` (series, events) — series rows or event rows; ISO 8601 timestamps with offset (column
-    `time`); scheme params; `lunation_index` column when `--calendar lunar`.
+    `time`); scheme params.
   - `json` (series, events) — `{scheme, timezone, samples|events: [...]}`.
-  - `terminal` (series, events) — glyph grid (one row per day, or per lunation when
-    `--calendar lunar`) or an event list; header states the timezone.
+  - `terminal` (series, events) — glyph grid (one row per day) or an event list; header states
+    the timezone.
 - **F6.4** Every renderer that shows times emits a mandatory timezone caption (zone name for
   local/DST zones, fixed offset / UTC otherwise; notes mid-range DST changes).
 - **F6.5** Adding a renderer is a single-file change: new module, `render(report, out)`,
@@ -206,7 +207,7 @@ from moonphase import (
     PhaseEphemeris,      # (kernel_path=None, data_dir="data")
     PhaseSample,         # (when, angle_deg, microphase)
     PhaseEvent,          # (when, angle_deg, kind, index, name)
-    Report,              # (scheme, mode, samples, events, tz, labels)
+    Report,              # (scheme, mode, samples, events, tz, labels, options)
     build_series,        # (start, end, scheme, sample_step, ephemeris) -> [PhaseSample]
     build_events,        # (start, end, scheme, ephemeris, transitions=False) -> [PhaseEvent]
     phase_to_index,      # (phase_deg, scheme) -> int   (centered, round-half-up)
