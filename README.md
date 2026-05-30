@@ -113,9 +113,18 @@ moonphase --start 2026-01-01 --end 2026-12-31 --divisions 16 \
 # Almanac ribbon of the principal phases (+ transitions) for a quarter
 moonphase --start 2026-01-01 --end 2026-03-31 --divisions 4 \
           --format almanac --transitions --out almanac.svg
+
+# Custom names: rename the four phases (inline), or name 16 gradations from a file
+moonphase --start 2026-01-01 --end 2026-03-31 --divisions 4 --format almanac \
+          --labels "Dark Moon,Building,Bright Moon,Fading" --out named.svg
+moonphase --start 2026-01-01 --end 2026-12-31 --divisions 16 --format chart \
+          --labels @names16.txt --out year-named.png
 ```
 
 `heatmap` is series-mode; `almanac` is events-mode — both auto-resolve `--mode`.
+`--labels` accepts an inline comma list or `@file` (one name per line, or a JSON
+`index→name` map); unnamed slots fall back to the built-in names (for 4/8 divisions)
+or the microphase index.
 
 > **Timezones:** bare dates use your local time; pass an ISO offset
 > (e.g. `2026-01-01T00:00-08:00` or `…Z`) to pin a zone. Output carries the
@@ -133,6 +142,7 @@ moonphase --start DATE --end DATE
           [--tint {illumination,index}]        # heatmap cell tint
           [--calendar {gregorian,lunar}]       # heatmap layout
           [--lunar-anchor {new,full}]          # lunar-month boundary
+          [--labels SPEC]            # custom names: "A,B,C" or @file (sparse-merge)
           [--out PATH]               # stdout / window if omitted, where applicable
           [--ephemeris PATH.bsp]     # override the bundled-kernel download
 ```
@@ -184,11 +194,10 @@ actual output closely follows these targets:
 - **Phase 3 — New renderers & layouts** — the `heatmap` renderer (`--tint
   illumination|index`, `--calendar gregorian|lunar` with `--lunar-anchor`) and the
   `almanac` moon-disk ribbon.
+- **Phase 4 — Custom names** — `--labels` (inline or `@file`, sparse-merged over the
+  built-in names) for naming the finer gradations.
 
-Planned, in order:
-
-- **Phase 4 — Custom names:** `--labels` (inline or `@file`) for naming the finer
-  gradations.
+All four roadmap phases are implemented.
 
 See `docs/specs/primary.md` for the full specification, `docs/superpowers/specs/`
 for the design write-up, and `docs/superpowers/plans/` for the phased
