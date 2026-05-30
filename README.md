@@ -99,8 +99,9 @@ moonphase --start 2026-03-01 --end 2026-03-31 --divisions 8 --mode events
 default to `series`). `--sample` applies only in series mode. Events mode needs a
 step that divides 360° evenly, which every `--divisions N` satisfies.
 
-> **Times are UTC** for now. Local-timezone input/output with explicit
-> per-render timezone captions is planned (see [Roadmap](#status--roadmap)).
+> **Timezones:** bare dates use your local time; pass an ISO offset
+> (e.g. `2026-01-01T00:00-08:00` or `…Z`) to pin a zone. Output carries the
+> offset, conversions are DST-aware, and every render states its timezone.
 
 ## CLI
 
@@ -148,16 +149,18 @@ which is implemented yet**:
 
 ## Status & roadmap
 
-**Phase 1 (implemented):** centered-phase model, exact event-finding (phase
-centers + transition points), the `Report`-based renderer interface with
-mode declarations, the `chart`/`csv`/`json`/`terminal` renderers, and the
-`--mode`/`--transitions` CLI.
+**Implemented:**
+
+- **Phase 1** — centered-phase model, exact event-finding (phase centers +
+  transition points), the `Report`-based renderer interface with mode
+  declarations, the `chart`/`csv`/`json`/`terminal` renderers, and the
+  `--mode`/`--transitions` CLI.
+- **Phase 2 — Time handling** — local-timezone input (bare dates → local), ISO
+  offsets in output, DST-aware conversions, and a timezone caption on every
+  time-bearing render.
 
 Planned, in order:
 
-- **Phase 2 — Time handling:** local-timezone input (bare dates → local), ISO
-  offsets in output, DST-aware conversions, and a mandatory timezone caption on
-  every time-bearing render.
 - **Phase 3 — New renderers & layouts:** `heatmap` (with `--tint illumination|index`
   and a `--calendar lunar` / `--lunar-anchor` layout) and `almanac` (moon-disk
   ribbon).

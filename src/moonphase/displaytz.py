@@ -81,8 +81,19 @@ class DisplayZone:
             return "UTC" + _fmt_offset(self._tz.utcoffset(None))
         if start_utc is None:
             return "local time"
-        a = start_utc.astimezone().tzname()
-        b = (end_utc or start_utc).astimezone().tzname()
-        if a == b:
-            return f"local time ({a})"
-        return f"local time ({a}/{b}, DST changes within range)"
+        # Sample the local zone across the whole range (not just endpoints): a
+        # year can start and end in the same DST state yet switch in between.
+        end = end_utc or start_utc
+        names: list[str] = []
+        t = start_utc
+        while t < end:
+            nm = t.astimezone().tzname()
+            if nm not in names:
+                names.append(nm)
+            t += timedelta(days=15)
+        last = end.astimezone().tzname()
+        if last not in names:
+            names.append(last)
+        if len(names) == 1:
+            return f"local time ({names[0]})"
+        return f"local time ({'/'.join(sorted(names))}, DST changes within range)"
