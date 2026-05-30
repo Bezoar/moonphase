@@ -9,6 +9,8 @@ Rendered output of every visual `moonphase` renderer for the **2026** lunar year
   by `pip install -e .`; the DE421 kernel (~17 MB) downloads to `./data/` on first use.
 - The **almanac** uses a Jan–Feb window (≈2 lunations) — a full-year microphase ribbon would
   be unreadably dense.
+- All charts use the default **dark** theme; pass `--theme light` for a light variant (one is
+  shown at the end under [Light theme](#light-theme)).
 
 ---
 
@@ -239,4 +241,20 @@ A New→Full almanac window with all 16 gradations named from
 moonphase --start 2026-01-18T00:00Z --end 2026-02-02T00:00Z --divisions 16 --format almanac \
           --labels @samples/labels-16.txt \
           --out samples/almanac-2026-newfull-16div-labelled.png
+```
+
+---
+
+## Light theme
+
+Every chart defaults to the **dark** theme (above); `--theme light` renders a light variant.
+In light mode the color (`--tint index`) heatmap has no black cell borders — cells are
+separated by the background.
+
+![Light-theme index heatmap, 16 divisions, 2026](heatmap-gregorian-index-2026-16div-light.png)
+
+```bash
+moonphase --start 2026-01-01T00:00Z --end 2026-12-31T23:00Z --divisions 16 \
+          --format heatmap --tint index --theme light \
+          --out samples/heatmap-gregorian-index-2026-16div-light.png
 ```
