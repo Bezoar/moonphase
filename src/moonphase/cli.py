@@ -5,10 +5,11 @@ from __future__ import annotations
 import argparse
 import re
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 
 from . import renderers
 from .calendar import build_series
+from .displaytz import DisplayZone
 from .ephemeris import PhaseEphemeris
 from .events import build_events
 from .microphase import MicrophaseScheme
@@ -39,12 +40,12 @@ _STEP_RE = re.compile(r"^\s*([0-9]*\.?[0-9]+)\s*(deg|d|°)?\s*$", re.IGNORECASE)
 
 
 def _parse_date(s: str) -> datetime:
-    # Accept YYYY-MM-DD or full ISO 8601.
+    """Parse YYYY-MM-DD or full ISO 8601. Naive input stays naive (its zone is
+    resolved later); ISO input with an offset stays aware."""
     try:
         if "T" in s or " " in s:
-            return datetime.fromisoformat(s).replace(tzinfo=timezone.utc) \
-                if datetime.fromisoformat(s).tzinfo is None else datetime.fromisoformat(s)
-        return datetime.strptime(s, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+            return datetime.fromisoformat(s)
+        return datetime.strptime(s, "%Y-%m-%d")
     except ValueError as e:
         raise argparse.ArgumentTypeError(f"bad date {s!r}: {e}") from e
 
@@ -67,8 +68,10 @@ def _parse_sample(s: str) -> timedelta:
 
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="moonphase", description=__doc__)
-    p.add_argument("--start", type=_parse_date, required=True, help="UTC start date (YYYY-MM-DD)")
-    p.add_argument("--end", type=_parse_date, required=True, help="UTC end date (YYYY-MM-DD)")
+    p.add_argument("--start", type=_parse_date, required=True,
+                   help="start date (YYYY-MM-DD or ISO 8601); bare dates use local time")
+    p.add_argument("--end", type=_parse_date, required=True,
+                   help="end date (YYYY-MM-DD or ISO 8601); bare dates use local time")
 
     g = p.add_mutually_exclusive_group(required=True)
     g.add_argument("--divisions", type=int, help="number of equal microphases per synodic cycle")
@@ -103,20 +106,24 @@ def main(argv: list[str] | None = None) -> int:
         print(f"error: {e}", file=sys.stderr)
         return 2
 
+    zone = DisplayZone.resolve(args.start)
+    start_utc = zone.to_utc(args.start)
+    end_utc = zone.to_utc(args.end)
+
     eph = PhaseEphemeris(kernel_path=args.ephemeris)
 
     if mode == "events":
         # --sample does not apply in events mode (events are root-found, not sampled)
-        events = build_events(args.start, args.end, scheme, eph,
+        events = build_events(start_utc, end_utc, scheme, eph,
                               transitions=args.transitions)
-        report = Report(scheme=scheme, mode="events", events=events)
+        report = Report(scheme=scheme, mode="events", events=events, tz=zone)
     else:
-        samples = build_series(args.start, args.end, scheme,
+        samples = build_series(start_utc, end_utc, scheme,
                                sample_step=args.sample, ephemeris=eph)
-        # series-mode events: phase centers always, transitions when requested
-        events = build_events(args.start, args.end, scheme, eph,
+        events = build_events(start_utc, end_utc, scheme, eph,
                               transitions=args.transitions)
-        report = Report(scheme=scheme, mode="series", samples=samples, events=events)
+        report = Report(scheme=scheme, mode="series", samples=samples,
+                        events=events, tz=zone)
 
     renderers.get(args.format)(report, args.out)
     return 0
