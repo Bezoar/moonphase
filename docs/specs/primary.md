@@ -111,6 +111,8 @@ next decade", "the exact UTC instant of every full moon").
   - `--mode {series,events}` — auto-resolved from the format when omitted (single-mode format →
     its mode; multi-mode format → `series`).
   - `--transitions` — include transition points (overlay markers in series; rows in events).
+  - `--theme {dark,light}` — color theme for the visual renderers (`chart`/`heatmap`/`almanac`);
+    default `dark`. *(implemented in issue #7)*
   - `--tint {illumination,index}` — **heatmap only**; default `illumination`.
   - `--calendar {gregorian,lunar}` — **heatmap layout**; default `gregorian`.
   - `--lunar-anchor {new,full}` — default `new`; only meaningful with `--calendar lunar`.
