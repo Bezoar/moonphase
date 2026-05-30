@@ -9,6 +9,12 @@ from ..naming import default_name
 from . import register
 
 
+def _span(report):
+    items = report.events if report.mode == "events" else report.samples
+    items = items or []
+    return (items[0].when, items[-1].when) if items else (None, None)
+
+
 @register("chart", modes={"series", "events"})
 def render(report, out):
     import matplotlib.dates as mdates
@@ -53,7 +59,10 @@ def render(report, out):
         axL.set_yticklabels([default_name(k, s) or f"{(k * step) % 360:.0f}°"
                              for k in range(s.divisions)])
 
-        ax.set_title(f"Lunar microphases — {s.divisions} divisions ({step:.3f}° each)")
+        start_utc, end_utc = _span(report)
+        caption = report.tz.caption(start_utc, end_utc)
+        ax.set_title(f"Lunar microphases — {s.divisions} divisions ({step:.3f}° each)\n"
+                     f"times in {caption}", fontsize=10)
         ax.xaxis.set_major_locator(mdates.AutoDateLocator())
         ax.xaxis.set_major_formatter(mdates.ConciseDateFormatter(ax.xaxis.get_major_locator()))
         if sc is not None:

@@ -87,7 +87,6 @@ def _force_tz(name):
         time.tzset()
 
 
-@pytest.mark.skip(reason="enabled in Phase 2 Task 4 (JSON timezone field)")
 def test_main_fixed_offset_start_propagates_to_output(tmp_path, monkeypatch):
     monkeypatch.setattr(cli_mod, "PhaseEphemeris", _LinearEph)
     out = tmp_path / "ev.json"
@@ -102,7 +101,6 @@ def test_main_fixed_offset_start_propagates_to_output(tmp_path, monkeypatch):
     assert payload["events"][0]["time"].endswith("-08:00")
 
 
-@pytest.mark.skip(reason="enabled in Phase 2 Task 4 (JSON timezone field)")
 def test_main_bare_date_uses_local(tmp_path, monkeypatch):
     monkeypatch.setattr(cli_mod, "PhaseEphemeris", _LinearEph)
     with _force_tz("America/Los_Angeles"):

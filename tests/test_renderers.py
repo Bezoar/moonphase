@@ -8,6 +8,7 @@ matplotlib.use("Agg")
 
 from moonphase import renderers
 from moonphase.calendar import PhaseSample
+from moonphase.displaytz import DisplayZone
 from moonphase.events import PhaseEvent
 from moonphase.microphase import MicrophaseScheme
 from moonphase.report import Report
@@ -97,3 +98,33 @@ def test_terminal_series_grid(tmp_path):
     out = tmp_path / "ts.txt"
     renderers.get("terminal")(_series_report(), str(out))
     assert "2026-01-01" in out.read_text()
+
+
+def test_json_has_timezone_field(tmp_path):
+    out = tmp_path / "e.json"
+    renderers.get("json")(_events_report(), str(out))
+    payload = json.load(out.open())
+    assert payload["timezone"] == "UTC"  # default zone
+
+
+def test_json_fixed_offset_timestamps_and_caption(tmp_path):
+    z = DisplayZone("fixed", __import__("datetime").timedelta(hours=-8))
+    r = Report(scheme=S4, mode="events", events=_events_report().events, tz=z)
+    out = tmp_path / "e2.json"
+    renderers.get("json")(r, str(out))
+    payload = json.load(out.open())
+    assert payload["timezone"] == "UTC-08:00"
+    assert payload["events"][0]["time"].endswith("-08:00")
+
+
+def test_csv_timestamps_carry_offset(tmp_path):
+    out = tmp_path / "s.csv"
+    renderers.get("csv")(_series_report(), str(out))
+    rows = list(csvmod.reader(out.open()))
+    assert rows[1][0].endswith("+00:00")  # default UTC
+
+
+def test_terminal_header_states_timezone(tmp_path):
+    out = tmp_path / "e.txt"
+    renderers.get("terminal")(_events_report(), str(out))
+    assert "UTC" in out.read_text().splitlines()[0]
