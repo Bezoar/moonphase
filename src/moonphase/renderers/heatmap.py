@@ -232,13 +232,12 @@ def _render_gregorian(plt, report, samples, tint, caption, theme, out):
                     ax.add_patch(plt.Rectangle((dd - 1, row), 0.94, 0.94,
                                  facecolor=_tint(a, i, scheme, tint),
                                  edgecolor="none"))
-                    if key in marks:
-                        if cell_times:
-                            _draw_marker(ax, dd - 0.85, row + 0.18, 0.13,
-                                         marks[key], theme)
-                        else:
-                            _draw_marker(ax, dd - 0.53, row + 0.47, 0.30,
-                                         marks[key], theme)
+                    # In cell-times mode the principal phases show as plain
+                    # "label @ HH:MM" text like any other transition, so the
+                    # moon-disk markers are suppressed.
+                    if key in marks and not cell_times:
+                        _draw_marker(ax, dd - 0.53, row + 0.47, 0.30,
+                                     marks[key], theme)
                     if cell_times and key in day_trans:
                         _draw_cell_times(ax, dd - 1, row, day_trans[key],
                                          cells[key], scheme, tint, label_of)
