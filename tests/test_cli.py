@@ -212,15 +212,18 @@ def test_parse_size_bad():
         cli_mod._parse_size("0x100")
 
 
-def test_cell_times_requires_transitions(monkeypatch, tmp_path, capsys):
+def test_cell_times_without_transitions_renders_peaks(monkeypatch, tmp_path):
+    # --cell-times without --transitions is now valid: cells show phase peaks only.
+    # A 3-month range guarantees several phase-center events land in day cells so the
+    # _draw_cell_times path is actually exercised (one month may yield none at 8 div).
     monkeypatch.setattr(cli_mod, "PhaseEphemeris", _LinearEph)
+    out = tmp_path / "h.png"
     rc = cli_mod.main([
-        "--start", "2026-01-01", "--end", "2026-01-31", "--divisions", "8",
-        "--format", "heatmap", "--cell-times", "--out", str(tmp_path / "h.png"),
+        "--start", "2026-01-01", "--end", "2026-03-31", "--divisions", "8",
+        "--format", "heatmap", "--cell-times", "--out", str(out),
     ])
-    assert rc == 2
-    err = capsys.readouterr().err
-    assert "--cell-times requires --transitions" in err
+    assert rc == 0
+    assert out.exists() and out.stat().st_size > 0
 
 
 def test_cell_times_rejects_lunar(monkeypatch, tmp_path, capsys):
