@@ -116,6 +116,7 @@ next decade", "the exact UTC instant of every full moon").
   - `--lunar-anchor {new,full}` — default `new`; only meaningful with `--calendar lunar`.
   - `--labels SPEC` — custom microphase names: inline comma list or `@file` (one per line, or JSON
     `index→name`), **sparse-merge** (blank/missing → built-in for N∈{4,8}, else index/angle).
+    *(implemented in Phase 4)*
   - `--sample DUR` — cadence; **series mode only**, ignored in events mode (documented).
   - `--format NAME` — renderer; choices populated dynamically from the registry, filtered by mode.
   - `--out PATH` — output path; format inferred from extension where applicable.
