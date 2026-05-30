@@ -87,7 +87,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--tint", choices=["illumination", "index"], default="illumination",
                    help="heatmap cell tint (heatmap only)")
     p.add_argument("--calendar", choices=["gregorian", "lunar"], default="gregorian",
-                   help="heatmap/terminal layout: civil months or lunar months")
+                   help="heatmap layout: civil months or lunar months")
     p.add_argument("--lunar-anchor", choices=["new", "full"], default="new",
                    help="lunar-month boundary (with --calendar lunar)")
     p.add_argument("--format", default="chart", choices=renderers.available(),
@@ -135,7 +135,11 @@ def main(argv: list[str] | None = None) -> int:
         report = Report(scheme=scheme, mode="series", samples=samples,
                         events=events, tz=zone, options=options)
 
-    renderers.get(args.format)(report, args.out)
+    try:
+        renderers.get(args.format)(report, args.out)
+    except ValueError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 2
     return 0
 
 
