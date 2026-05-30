@@ -101,9 +101,12 @@ def _giant_figsize(plt, day_trans, label_of, n_rows, has_legend, family):
     longest = max(lines, key=len) if lines else "0 @ 00:00"
     w_in, h_in = _measure_line_inches(plt, longest, family)
     cell_w = w_in + 0.12                        # horizontal padding (inches)
-    cell_h = max_rows * (h_in * 1.30) + 0.06    # 1.30x line spacing + baseline pad
-    gutter, title = 1.1, 0.6                     # left month-label gutter + title bar (inches)
-    legend = 0.7 if has_legend else 0.2          # index-swatch strip allowance
+    text_h = max_rows * (h_in * 1.30) + 0.06    # 1.30x line spacing + baseline pad
+    # at least square (cell_h >= cell_w) so a couple of stacked transitions have
+    # vertical room; taller still when a day needs more than ~one line of text
+    cell_h = max(text_h, cell_w)
+    gutter, title = 1.1, 0.9                     # left month-label gutter + title/day-axis (inches)
+    legend = 0.9 if has_legend else 0.4          # day-of-month axis (+ index swatch) allowance
     return gutter + 31 * cell_w, title + n_rows * cell_h + legend
 
 
@@ -241,12 +244,18 @@ def _render_gregorian(plt, report, samples, tint, caption, theme, out):
                     if cell_times and key in day_trans:
                         _draw_cell_times(ax, dd - 1, row, day_trans[key],
                                          cells[key], scheme, tint, label_of)
+            # A single day-of-month axis directly beneath the grid, ticked and
+            # labelled every 7 days (replaces matplotlib's bottom tick axis).
+            for d in (1, 8, 15, 22, 29):
+                x = d - 0.5
+                ax.plot([x, x], [nrows + 0.02, nrows + 0.16], color=theme.spine, lw=0.9)
+                ax.text(x, nrows + 0.22, str(d), ha="center", va="top",
+                        fontsize=9, color=theme.fg)
             if legend:
-                _index_legend(plt, ax, scheme, theme, 0, 14, nrows + 0.9, 0.6)
+                _index_legend(plt, ax, scheme, theme, 0, 14, nrows + 1.05, 0.5)
             ax.set_xlim(-0.5, 31)
-            ax.set_ylim(nrows + (2.0 if legend else 0.2), -0.5)
-            ax.set_xticks([0.5, 9.5, 19.5, 29.5])
-            ax.set_xticklabels(["1", "10", "20", "30"], fontsize=7)
+            ax.set_ylim(nrows + (1.95 if legend else 0.75), -0.5)
+            ax.set_xticks([])
             ax.set_yticks([])
             years = sorted({d[:4] for d in cells})
             _finish(plt, fig, ax, theme,
