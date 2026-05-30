@@ -78,6 +78,21 @@ def _parse_sample(s: str) -> timedelta:
             "h": timedelta(hours=n), "d": timedelta(days=n)}[unit]
 
 
+_SIZE_RE = re.compile(r"^\s*([0-9]+)\s*[xX]\s*([0-9]+)\s*$")
+
+
+def _parse_size(s: str) -> tuple[int, int]:
+    """Parse pixel dimensions ``WIDTHxHEIGHT``, e.g. '5000x3000'."""
+    m = _SIZE_RE.match(s)
+    if not m:
+        raise argparse.ArgumentTypeError(
+            f"bad --size {s!r}; expected e.g. '5000x3000' (WIDTHxHEIGHT)")
+    w, h = int(m.group(1)), int(m.group(2))
+    if w <= 0 or h <= 0:
+        raise argparse.ArgumentTypeError("--size dimensions must be positive")
+    return (w, h)
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="moonphase", description=__doc__)
     p.add_argument("--start", type=_parse_date, required=True,
