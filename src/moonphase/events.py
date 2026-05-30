@@ -65,6 +65,11 @@ def build_events(start: datetime, end: datetime, scheme: MicrophaseScheme,
     With ``transitions=True`` also transition points (odd multiples of
     ``step/2``); the half-step grid is an internal device - events are still
     labeled ``center``/``transition``, never treated as 2N microphases.
+
+    Requires a scheme whose step divides 360 evenly (every ``--divisions``
+    scheme, and ``--step`` values that divide 360). Non-dividing steps are
+    rejected in events mode, since phase centers would otherwise drift across
+    the cycle wrap.
     """
     if start.tzinfo is None:
         start = start.replace(tzinfo=timezone.utc)
@@ -72,6 +77,14 @@ def build_events(start: datetime, end: datetime, scheme: MicrophaseScheme,
         end = end.replace(tzinfo=timezone.utc)
     if start > end:
         raise ValueError("start must be <= end")
+
+    ratio = 360.0 / scheme.step_deg
+    if abs(ratio - round(ratio)) > 1e-9:
+        raise ValueError(
+            "events mode requires a microphase step that divides 360 evenly; "
+            f"step_deg={scheme.step_deg} does not. Use --divisions, or a --step "
+            "value that divides 360."
+        )
 
     unit = scheme.step_deg / 2.0 if transitions else scheme.step_deg
     coarse_days = max(min((unit / _DEG_PER_DAY) / 4.0, 0.25), 1e-4)

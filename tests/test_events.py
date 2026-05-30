@@ -78,3 +78,17 @@ def test_start_after_end_raises():
     eph = LinearEphemeris(START)
     with pytest.raises(ValueError):
         build_events(START + timedelta(days=1), START, MicrophaseScheme.from_divisions(4), eph)
+
+
+def test_non_dividing_step_rejected_in_events():
+    eph = LinearEphemeris(START)
+    scheme = MicrophaseScheme.from_step(7.0)  # 360/7 is not an integer
+    with pytest.raises(ValueError):
+        build_events(START, START + timedelta(days=40), scheme, eph)
+
+
+def test_dividing_step_allowed_in_events():
+    eph = LinearEphemeris(START, rate_deg_per_day=12.0, phase0_deg=0.0)
+    scheme = MicrophaseScheme.from_step(90.0)  # divides 360 -> 4 arcs
+    events = build_events(START, START + timedelta(days=30), scheme, eph)
+    assert events and all(e.kind == "center" for e in events)

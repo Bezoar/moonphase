@@ -85,7 +85,7 @@ next decade", "the exact UTC instant of every full moon").
 
 ### 5.3b Exact events
 - **F3b.1** `build_events(start, end, scheme, ephemeris, transitions=False)` returns chronological
-  `PhaseEvent`s with sub-second UTC instants, root-found via Skyfield's `almanac.find_discrete`.
+  `PhaseEvent`s with sub-second UTC instants, root-found via Skyfield's `almanac.find_discrete`. The reference implementation locates crossings with an injectable bisection root-finder over ``phase_angles_deg`` (equivalent observable contract to ``find_discrete``, chosen so event-finding is unit-testable offline); events mode requires a step that divides 360 evenly.
 - **F3b.2** With `transitions=False`, the discrete function is `floor(angle/step)`; each change is
   a **phase-center** crossing. With `transitions=True`, the function is `floor(angle/(step/2))`;
   even multiples are labeled `center`, odd multiples `transition`. The half-step is an internal
