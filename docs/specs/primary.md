@@ -161,7 +161,7 @@ next decade", "the exact UTC instant of every full moon").
 - **N2** Hard deps: `skyfield`, `numpy`, `matplotlib`. No optional groups beyond `dev`.
 - **N3** Cold-import time (no kernel load) under 500 ms — Skyfield/matplotlib stay lazily imported.
 - **N4** Repository under 1 MB excluding the ephemeris kernel.
-- **N5** AGPL-3.0-or-later; network copyleft applies to modified hosted deployments.
+- **N5** MIT-licensed; permissive, no copyleft obligations on downstream users.
 - **N6** Determinism: identical invocations on the same kernel produce byte-identical output
   **when a timezone is pinned** (explicit `--start` offset / UTC). With local-tz resolution,
   output depends on the host timezone — documented; CI/reproducible runs should pin an offset.

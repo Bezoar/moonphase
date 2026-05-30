@@ -86,5 +86,6 @@ Default JPL **DE421** (~17 MB) is downloaded by Skyfield's `Loader` into `./data
 
 ## License
 
-AGPL-3.0-or-later (see `pyproject.toml` / `LICENSE`). Network copyleft: operators running a
-modified `moonphase` as a hosted service must offer the modified source.
+MIT (see `pyproject.toml` / `LICENSE`). Permissive; no copyleft obligations. All deps
+(Skyfield, numpy, matplotlib) are permissive and the DE421 ephemeris is freely usable under
+NAIF's terms, so nothing forces copyleft.
