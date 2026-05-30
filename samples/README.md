@@ -90,14 +90,16 @@ moonphase --start 2026-01-01T00:00Z --end 2026-12-31T23:00Z \
 
 ### Giant heatmap with in-cell transition times — `--cell-times`
 
-With `--cell-times` (gregorian + `--transitions`), each day cell prints the
-time(s) a microphase transition took effect, in low-contrast text — `code @ HH:MM`,
-where `code` is the `--labels` value (here the compact codes from
-[`labels-16-compact.txt`](labels-16-compact.txt)) or the bare microphase number.
-The principal phases (New, 1Q, Full, 3Q) appear as plain text like any other
-phase — no moon-disk markers. The figure is auto-sized from the labels so 9 pt
-text stays legible, which makes it large — **tap the image to open it full-size
-in a new tab**.
+With `--cell-times` (gregorian), each day cell prints two kinds of moment in
+low-contrast text: a **phase peak** as a bare `code HH:MM` (e.g. `Full 21:23`),
+and — when `--transitions` is also given — the **transition into** a phase as
+`→code HH:MM` (e.g. `→Full 14:25`). `code` is the `--labels` value (here the
+compact codes from [`labels-16-compact.txt`](labels-16-compact.txt)) or the bare
+microphase number. Without `--transitions` the cells show peaks only. The
+principal phases (New, 1Q, Full, 3Q) appear as plain text like any other phase —
+no moon-disk markers. The figure is auto-sized from the labels so 9 pt text stays
+legible, which makes it large — **tap the image to open it full-size in a new
+tab**.
 
 [![Giant cell-times heatmap, 16 divisions, color tint, 2026](heatmap-cell-times-2026-16div.png)](heatmap-cell-times-2026-16div.png)
 
