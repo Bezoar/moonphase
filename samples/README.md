@@ -207,3 +207,36 @@ moonphase --start 2026-01-01T00:00Z --end 2026-02-28T23:00Z \
           --divisions 16 --format almanac --transitions \
           --out samples/almanac-2026-jan-feb-16div.png
 ```
+
+---
+
+## Custom names — `--labels`
+
+`--labels` renames microphases. Provide an **inline** comma list, or `@file` (one name
+per line, or a JSON `index→name` map); unspecified slots fall back to the built-in
+names (for 4/8 divisions) or the index.
+
+### Inline names on the strip-chart axis (8 divisions)
+
+The eight phases are renamed on the left axis via an inline comma list.
+
+![Strip-chart with custom inline labels, 8 divisions](chart-2026-8div-labelled.png)
+
+```bash
+moonphase --start 2026-01-01T00:00Z --end 2026-12-31T23:00Z --divisions 8 --format chart \
+          --labels "Dark,Waxing Sliver,Building Half,Waxing Gibbous,Bright,Waning Gibbous,Falling Half,Waning Sliver" \
+          --out samples/chart-2026-8div-labelled.png
+```
+
+### Naming the finer gradations from a file (16 divisions)
+
+A New→Full almanac window with all 16 gradations named from
+[`labels-16.txt`](labels-16.txt) (one name per line).
+
+![Almanac with 16 custom gradation names, New→Full 2026](almanac-2026-newfull-16div-labelled.png)
+
+```bash
+moonphase --start 2026-01-18T00:00Z --end 2026-02-02T00:00Z --divisions 16 --format almanac \
+          --labels @samples/labels-16.txt \
+          --out samples/almanac-2026-newfull-16div-labelled.png
+```

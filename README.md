@@ -180,6 +180,12 @@ actual output closely follows these targets:
 - **B · Calendar heatmap** (illumination / microphase-index tints + lunar-month layout) — the `heatmap` renderer (Phase 3).
 - **C · Almanac moon ribbon** — the `almanac` renderer (Phase 3).
 
+## Sample gallery
+
+Actual rendered output of every chart for **2026** (at 8 and 16 divisions, plus
+custom-label examples) lives in **[`samples/`](samples/README.md)** — each image is
+embedded above the exact `moonphase` command that produced it.
+
 ## Status & roadmap
 
 **Implemented:**
