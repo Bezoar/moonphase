@@ -173,3 +173,15 @@ def test_main_labels_bad_file_is_clean_error(tmp_path, monkeypatch, capsys):
     ])
     assert rc == 2
     assert "error:" in capsys.readouterr().err
+
+
+def test_main_labels_malformed_json_is_clean_error(tmp_path, monkeypatch, capsys):
+    bad = tmp_path / "bad.json"
+    bad.write_text("{not valid json")
+    monkeypatch.setattr(cli_mod, "PhaseEphemeris", _LinearEph)
+    rc = cli_mod.main([
+        "--start", "2026-01-01", "--end", "2026-02-01", "--divisions", "4",
+        "--mode", "events", "--format", "json", "--labels", f"@{bad}",
+    ])
+    assert rc == 2
+    assert "error:" in capsys.readouterr().err
