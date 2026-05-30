@@ -19,7 +19,7 @@ class Report:
     samples: list[PhaseSample] | None = None   # present iff mode == "series"
     events: list[PhaseEvent] | None = None      # exact events (overlay or primary)
     tz: DisplayZone = _UTC                      # display timezone (UTC by default)
-    labels: list[str] | None = None            # custom names; None until Phase 4
+    labels: list[str] | None = None            # custom names (from --labels); None when unset
     options: dict | None = None                # renderer-specific flags (tint/calendar/...)
 
     def span(self):
