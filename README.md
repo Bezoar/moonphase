@@ -99,6 +99,24 @@ moonphase --start 2026-03-01 --end 2026-03-31 --divisions 8 --mode events
 default to `series`). `--sample` applies only in series mode. Events mode needs a
 step that divides 360° evenly, which every `--divisions N` satisfies.
 
+### Calendar & almanac views
+
+```bash
+# Year heatmap tinted by microphase index (16 hues)
+moonphase --start 2026-01-01 --end 2026-12-31 --divisions 16 \
+          --format heatmap --tint index --out year.png
+
+# Lunar-month heatmap: one phase-aligned strip per lunation (new-moon boundaries)
+moonphase --start 2026-01-01 --end 2026-12-31 --divisions 16 \
+          --format heatmap --calendar lunar --out lunar.png
+
+# Almanac ribbon of the principal phases (+ transitions) for a quarter
+moonphase --start 2026-01-01 --end 2026-03-31 --divisions 4 \
+          --format almanac --transitions --out almanac.svg
+```
+
+`heatmap` is series-mode; `almanac` is events-mode — both auto-resolve `--mode`.
+
 > **Timezones:** bare dates use your local time; pass an ISO offset
 > (e.g. `2026-01-01T00:00-08:00` or `…Z`) to pin a zone. Output carries the
 > offset, conversions are DST-aware, and every render states its timezone.
@@ -111,7 +129,10 @@ moonphase --start DATE --end DATE
           [--mode {series,events}]   # default: auto from --format, else series
           [--transitions]            # include transition points
           [--sample DUR]             # series cadence (e.g. 30m, 1h, 2d); series mode only
-          [--format {chart,csv,json,terminal}]
+          [--format {chart,heatmap,almanac,csv,json,terminal}]
+          [--tint {illumination,index}]        # heatmap cell tint
+          [--calendar {gregorian,lunar}]       # heatmap layout
+          [--lunar-anchor {new,full}]          # lunar-month boundary
           [--out PATH]               # stdout / window if omitted, where applicable
           [--ephemeris PATH.bsp]     # override the bundled-kernel download
 ```
@@ -127,6 +148,8 @@ Renderers are a pluggable registry; each declares which modes it supports.
 | Format | Modes | Output |
 |--------|-------|--------|
 | `chart` | series, events | Matplotlib strip-chart of elongation vs time — centered phase bands, named phases on the left axis / degrees on the right, with exact-event overlays (solid = phase centers, dashed = transitions). File type inferred from `--out` extension (png/svg/pdf/…). |
+| `heatmap` | series | Calendar grid. `--calendar gregorian` (months × days, cells tinted, principal-phase day markers) or `--calendar lunar` (one phase-aligned strip per lunation, dated by `--lunar-anchor`). `--tint illumination` (grayscale by lit fraction) or `--tint index` (a hue per microphase). |
+| `almanac` | events | Ribbon of rendered moon disks at each exact phase center (name + date + time), with transition points dashed between. |
 | `csv` | series, events | Sample rows, or exact-event rows (`time, target_angle_deg, kind, microphase_index, name, …`). |
 | `json` | series, events | `{scheme, samples}` or `{scheme, events}`. |
 | `terminal` | series, events | One row per day of Unicode moon glyphs (series), or a list of exact events. |
@@ -137,15 +160,15 @@ the calendar/events core.
 
 ## Design mockups
 
-The image below is a **design mockup** (rendered in a browser during design, with
-placeholder dates) — it shows the intended look of the chart family, **not all of
-which is implemented yet**:
+The image below is the original **design mockup** (rendered in a browser during
+design, with placeholder dates). All three renderer families are now implemented;
+actual output closely follows these targets:
 
-![Design mockups of the moonphase renderers — A: analytic strip-chart, B: calendar heatmap (illumination and index tints), C: almanac moon ribbon. These are design targets, not screenshots of the current output.](docs/mockups-2026-05-29.png)
+![Design mockups of the moonphase renderers — A: analytic strip-chart, B: calendar heatmap (illumination and index tints), C: almanac moon ribbon.](docs/mockups-2026-05-29.png)
 
-- **A · Analytic strip-chart** — corresponds to the `chart` renderer (**implemented**, Phase 1).
-- **B · Calendar heatmap** (illumination / microphase-index tints, plus a lunar-month layout) — **planned** (`heatmap`, not yet built).
-- **C · Almanac moon ribbon** — **planned** (`almanac`, not yet built).
+- **A · Analytic strip-chart** — the `chart` renderer (Phase 1).
+- **B · Calendar heatmap** (illumination / microphase-index tints + lunar-month layout) — the `heatmap` renderer (Phase 3).
+- **C · Almanac moon ribbon** — the `almanac` renderer (Phase 3).
 
 ## Status & roadmap
 
@@ -158,12 +181,12 @@ which is implemented yet**:
 - **Phase 2 — Time handling** — local-timezone input (bare dates → local), ISO
   offsets in output, DST-aware conversions, and a timezone caption on every
   time-bearing render.
+- **Phase 3 — New renderers & layouts** — the `heatmap` renderer (`--tint
+  illumination|index`, `--calendar gregorian|lunar` with `--lunar-anchor`) and the
+  `almanac` moon-disk ribbon.
 
 Planned, in order:
 
-- **Phase 3 — New renderers & layouts:** `heatmap` (with `--tint illumination|index`
-  and a `--calendar lunar` / `--lunar-anchor` layout) and `almanac` (moon-disk
-  ribbon).
 - **Phase 4 — Custom names:** `--labels` (inline or `@file`) for naming the finer
   gradations.
 
