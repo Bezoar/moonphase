@@ -106,6 +106,7 @@ def main(argv: list[str] | None = None) -> int:
     eph = PhaseEphemeris(kernel_path=args.ephemeris)
 
     if mode == "events":
+        # --sample does not apply in events mode (events are root-found, not sampled)
         events = build_events(args.start, args.end, scheme, eph,
                               transitions=args.transitions)
         report = Report(scheme=scheme, mode="events", events=events)

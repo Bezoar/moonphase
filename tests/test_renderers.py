@@ -3,6 +3,7 @@ import json
 from datetime import datetime, timezone
 
 import matplotlib
+import pytest
 matplotlib.use("Agg")
 
 from moonphase import renderers
@@ -69,3 +70,30 @@ def test_chart_series_writes_png(tmp_path):
     out = tmp_path / "c.png"
     renderers.get("chart")(_series_report(), str(out))
     assert out.exists() and out.stat().st_size > 0
+
+
+def test_chart_events_writes_png(tmp_path):
+    out = tmp_path / "ce.png"
+    renderers.get("chart")(_events_report(), str(out))
+    assert out.exists() and out.stat().st_size > 0
+
+
+def test_chart_series_with_overlay_writes_png(tmp_path):
+    r = Report(scheme=S4, mode="series", samples=_series_report().samples, events=[
+        PhaseEvent(when=T0.replace(hour=3), angle_deg=0.0, kind="center", index=0, name="New"),
+        PhaseEvent(when=T0.replace(hour=9), angle_deg=45.0, kind="transition", index=0, name=None),
+    ])
+    out = tmp_path / "co.png"
+    renderers.get("chart")(r, str(out))
+    assert out.exists() and out.stat().st_size > 0
+
+
+def test_chart_empty_series_raises(tmp_path):
+    with pytest.raises(ValueError):
+        renderers.get("chart")(Report(scheme=S4, mode="series", samples=[]), str(tmp_path / "x.png"))
+
+
+def test_terminal_series_grid(tmp_path):
+    out = tmp_path / "ts.txt"
+    renderers.get("terminal")(_series_report(), str(out))
+    assert "2026-01-01" in out.read_text()
