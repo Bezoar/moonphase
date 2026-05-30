@@ -1,0 +1,16 @@
+New
+Early Waxing Crescent
+Waxing Crescent
+Late Waxing Crescent
+First Quarter
+Early Waxing Gibbous
+Waxing Gibbous
+Late Waxing Gibbous
+Full
+Early Waning Gibbous
+Waning Gibbous
+Late Waning Gibbous
+Last Quarter
+Early Waning Crescent
+Waning Crescent
+Late Waning Crescent
