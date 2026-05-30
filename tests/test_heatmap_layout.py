@@ -3,7 +3,9 @@ from datetime import datetime, timedelta, timezone
 from moonphase.calendar import PhaseSample
 from moonphase.displaytz import DisplayZone
 from moonphase.events import PhaseEvent
-from moonphase.heatmap_layout import day_cells, principal_phase_days, lunations, transitions_by_day
+from moonphase.heatmap_layout import (
+    day_cells, principal_phase_days, lunations, transitions_by_day, cell_events_by_day,
+)
 
 UTC = DisplayZone.utc()
 T0 = datetime(2026, 1, 1, tzinfo=timezone.utc)
@@ -75,4 +77,42 @@ def test_transitions_by_day_uses_display_tz_day():
     evs = [PhaseEvent(when=datetime(2026, 1, 2, 3, tzinfo=timezone.utc),
                       angle_deg=11.25, kind="transition", index=0, name=None)]
     m = transitions_by_day(evs, z, 8)
+    assert list(m) == ["2026-01-01"]
+
+
+def test_cell_events_by_day_merges_centers_and_transitions_sorted():
+    evs = [
+        PhaseEvent(when=datetime(2026, 1, 1, 18, tzinfo=timezone.utc),
+                   angle_deg=22.5, kind="transition", index=0, name=None),
+        PhaseEvent(when=datetime(2026, 1, 1, 6, tzinfo=timezone.utc),
+                   angle_deg=0.0, kind="center", index=0, name="New"),
+        PhaseEvent(when=datetime(2026, 1, 2, 3, tzinfo=timezone.utc),
+                   angle_deg=45.0, kind="center", index=1, name=None),
+    ]
+    m = cell_events_by_day(evs, UTC, 8)
+    assert list(m) == ["2026-01-01", "2026-01-02"]
+    # time-sorted within the day: center (06:00) before transition (18:00).
+    # center index is the phase itself (no +1); transition entered = index+1.
+    assert [(is_t, idx, t.hour) for is_t, idx, t in m["2026-01-01"]] == [
+        (False, 0, 6), (True, 1, 18)]
+    assert [(is_t, idx) for is_t, idx, _ in m["2026-01-02"]] == [(False, 1)]
+
+
+def test_cell_events_by_day_centers_only_when_no_transitions():
+    evs = [PhaseEvent(when=datetime(2026, 1, 3, 9, tzinfo=timezone.utc),
+                      angle_deg=180.0, kind="center", index=4, name="Full")]
+    m = cell_events_by_day(evs, UTC, 8)
+    assert [(is_t, idx) for is_t, idx, _ in m["2026-01-03"]] == [(False, 4)]
+
+
+def test_cell_events_by_day_handles_none_events():
+    assert cell_events_by_day(None, UTC, 8) == {}
+
+
+def test_cell_events_by_day_uses_display_tz_day():
+    z = DisplayZone("fixed", timedelta(hours=-8))
+    # 2026-01-02 03:00 UTC == 2026-01-01 19:00 local -> previous local day
+    evs = [PhaseEvent(when=datetime(2026, 1, 2, 3, tzinfo=timezone.utc),
+                      angle_deg=11.25, kind="transition", index=0, name=None)]
+    m = cell_events_by_day(evs, z, 8)
     assert list(m) == ["2026-01-01"]

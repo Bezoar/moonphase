@@ -82,3 +82,27 @@ def transitions_by_day(events, tz, divisions):
     for day in out:
         out[day].sort(key=lambda pair: pair[1])
     return out
+
+
+def cell_events_by_day(events, tz, divisions):
+    """Map ``date_iso -> time-sorted [(is_transition, idx, local), ...]`` over both
+    phase-center and transition events.
+
+    A ``center`` event's ``index`` is the phase at its peak (``is_transition`` False,
+    rendered bare). A ``transition`` event's ``index`` is the microphase being *left*,
+    so the entered phase is ``(index + 1) % divisions`` (``is_transition`` True,
+    rendered with a leading arrow by the renderer). ``events`` may be ``None``."""
+    out: dict[str, list[tuple[bool, int, object]]] = {}
+    for e in events or []:
+        if e.kind == "transition":
+            is_transition, idx = True, (e.index + 1) % divisions
+        elif e.kind == "center":
+            is_transition, idx = False, e.index
+        else:
+            continue
+        local = tz.to_display(e.when)
+        day = local.date().isoformat()
+        out.setdefault(day, []).append((is_transition, idx, local))
+    for day in out:
+        out[day].sort(key=lambda t: t[2])
+    return out
