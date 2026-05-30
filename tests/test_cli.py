@@ -131,3 +131,15 @@ def test_main_passes_options_to_report(monkeypatch):
     ])
     assert rc == 0
     assert captured["opts"] == {"tint": "index", "calendar": "lunar", "lunar_anchor": "full"}
+
+
+def test_main_renderer_value_error_is_clean(tmp_path, monkeypatch, capsys):
+    # lunar heatmap over a sub-lunation range -> renderer raises ValueError;
+    # main must surface it as a clean "error: ..." with exit code 2, not a traceback.
+    monkeypatch.setattr(cli_mod, "PhaseEphemeris", _LinearEph)
+    rc = cli_mod.main([
+        "--start", "2026-01-01", "--end", "2026-01-08", "--divisions", "16",
+        "--format", "heatmap", "--calendar", "lunar", "--out", str(tmp_path / "x.png"),
+    ])
+    assert rc == 2
+    assert "error:" in capsys.readouterr().err
