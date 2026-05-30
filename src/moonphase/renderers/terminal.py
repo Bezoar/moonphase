@@ -14,18 +14,12 @@ def _glyph(idx: int, divisions: int) -> str:
     return _GLYPHS[int((idx / divisions) * len(_GLYPHS)) % len(_GLYPHS)]
 
 
-def _span(report):
-    items = report.events if report.mode == "events" else report.samples
-    items = items or []
-    return (items[0].when, items[-1].when) if items else (None, None)
-
-
 @register("terminal", modes={"series", "events"})
 def render(report, out):
     f = open(out, "w") if out else sys.stdout
     s = report.scheme
     tz = report.tz
-    start_utc, end_utc = _span(report)
+    start_utc, end_utc = report.span()
     caption = tz.caption(start_utc, end_utc)
     try:
         header = f"# {s.divisions} microphases, {s.step_deg:.3f}° per slice · times in {caption}\n"

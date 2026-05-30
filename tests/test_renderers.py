@@ -1,6 +1,6 @@
 import csv as csvmod
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import matplotlib
 import pytest
@@ -108,7 +108,7 @@ def test_json_has_timezone_field(tmp_path):
 
 
 def test_json_fixed_offset_timestamps_and_caption(tmp_path):
-    z = DisplayZone("fixed", __import__("datetime").timedelta(hours=-8))
+    z = DisplayZone("fixed", timedelta(hours=-8))
     r = Report(scheme=S4, mode="events", events=_events_report().events, tz=z)
     out = tmp_path / "e2.json"
     renderers.get("json")(r, str(out))
@@ -128,3 +128,14 @@ def test_terminal_header_states_timezone(tmp_path):
     out = tmp_path / "e.txt"
     renderers.get("terminal")(_events_report(), str(out))
     assert "UTC" in out.read_text().splitlines()[0]
+
+
+def test_terminal_series_groups_by_display_tz_day(tmp_path):
+    z = DisplayZone("fixed", timedelta(hours=-8))
+    # 2026-01-02 03:00 UTC == 2026-01-01 19:00 in UTC-08:00 -> previous local day
+    sample = PhaseSample(when=datetime(2026, 1, 2, 3, 0, tzinfo=timezone.utc),
+                         angle_deg=0.0, microphase=0)
+    r = Report(scheme=S4, mode="series", samples=[sample], tz=z)
+    out = tmp_path / "tzday.txt"
+    renderers.get("terminal")(r, str(out))
+    assert "2026-01-01" in out.read_text()  # grouped under local day, not 01-02
