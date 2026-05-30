@@ -119,12 +119,14 @@ next decade", "the exact UTC instant of every full moon").
   - `--size WIDTHxHEIGHT` — output image size in pixels (width first, e.g. `5000x3000`); a
     general override honored by the heatmap renderer. If an explicit `--size` is smaller than
     the computed minimum (see `--cell-times`), the renderer raises an error.
-  - `--cell-times` — **heatmap only**, requires `--transitions` and `--calendar gregorian`.
-    Prints, inside each day cell, the local time(s) at which a microphase transition took
-    effect — formatted `LABEL @ HH:MM` where LABEL is the `--labels` value for that microphase
-    or the bare microphase index. The microphase *entered* by the transition is
-    `(transition_index + 1) mod divisions`. The figure is auto-sized from the labels at a
-    9 pt minimum font size. A day with more than 4 crossings collapses to an `N×` badge.
+  - `--cell-times` — **heatmap only**, requires `--calendar gregorian`. Prints, inside each
+    day cell, the local time(s) of phase **peaks** (centers) as bare `LABEL HH:MM`; with
+    `--transitions`, also the **transition into** a phase as `→LABEL HH:MM`. LABEL is the
+    `--labels` value for that microphase or the bare microphase index. A peak's microphase is
+    the center's own index; the microphase *entered* by a transition is
+    `(transition_index + 1) mod divisions`. Both kinds are merged and sorted by time within a
+    cell. The figure is auto-sized from the labels at a 9 pt minimum font size. A day with more
+    than 4 events collapses to an `N×` badge.
   - `--font NAME|PATH` — font family name (e.g. `Helvetica`) or a path to a `.ttf`/`.otf`
     file; applied to all heatmap text.
   - `--labels SPEC` — custom microphase names: inline comma list or `@file` (one per line, or JSON
@@ -161,9 +163,9 @@ next decade", "the exact UTC instant of every full moon").
     cells marked with moon-disk glyphs on a dark backing chip at principal-phase days.
     `--calendar lunar` → one phase-aligned strip per lunation, annotated with Gregorian start
     (left), end (right), and mid/opposite-phase date (below center). `--cell-times`
-    (gregorian + `--transitions` only) prints transition times inside each day cell in
-    low-contrast text; figure is auto-sized from labels at a 9 pt minimum; `--size` overrides;
-    `--font` restyled text.
+    (gregorian only) prints phase-peak times — and, with `--transitions`, transition-into-phase
+    times prefixed `→` — inside each day cell in low-contrast text; figure is auto-sized from
+    labels at a 9 pt minimum; `--size` overrides; `--font` restyled text.
   - `almanac` (events) — moon-disk ribbon at exact phase centers with name + date + time;
     transition points dashed between (when `--transitions`). Correct lit-limb geometry with
     degenerate-fraction handling (New empty, Full solid).
