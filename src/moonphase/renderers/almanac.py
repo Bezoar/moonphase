@@ -4,12 +4,8 @@ with transition points marked between them."""
 from __future__ import annotations
 
 from ..moondisk import lit_polygon
+from ..theme import theme_of
 from . import register
-
-_DARK = "#15171f"
-_LIT = "#f4f1e6"
-_OUT = "#717a90"
-_TRANS = "#d98324"
 
 
 def _interp_x(when, centers):
@@ -33,26 +29,31 @@ def render(report, out):
         raise ValueError("no phase-center events to render")
 
     tz = report.tz
+    theme = theme_of(report)
     n = len(centers)
     fig, ax = plt.subplots(figsize=(min(2.0 + 1.7 * n, 26), 3.2))
+    fig.patch.set_facecolor(theme.bg)
+    ax.set_facecolor(theme.bg)
     try:
         r = 0.34
         for i, e in enumerate(centers):
-            ax.add_patch(Circle((i, 0), r, facecolor=_DARK, edgecolor=_OUT, lw=1, zorder=2))
+            ax.add_patch(Circle((i, 0), r, facecolor=theme.moon_dark,
+                                edgecolor=theme.moon_ring, lw=1, zorder=2))
             poly = lit_polygon(i, 0, r, e.angle_deg)
             if poly:
-                ax.add_patch(Polygon(poly, closed=True, facecolor=_LIT,
+                ax.add_patch(Polygon(poly, closed=True, facecolor=theme.moon_lit,
                                      edgecolor="none", zorder=3))
-            ax.add_patch(Circle((i, 0), r, fill=False, edgecolor=_OUT, lw=1, zorder=4))
+            ax.add_patch(Circle((i, 0), r, fill=False, edgecolor=theme.moon_ring,
+                                lw=1, zorder=4))
             local = tz.to_display(e.when)
             ax.text(i, -0.60, e.name or f"#{e.index}", ha="center", va="top",
-                    fontsize=9, fontweight="bold")
+                    fontsize=9, fontweight="bold", color=theme.fg)
             ax.text(i, -0.78, local.strftime("%b %d %H:%M"), ha="center", va="top",
-                    fontsize=7.5, color="#888")
+                    fontsize=7.5, color=theme.muted)
         for tr in transitions:
             x = _interp_x(tr.when, centers)
             if x is not None:
-                ax.plot([x, x], [-0.42, 0.42], color=_TRANS, ls="--", lw=1.2, zorder=1)
+                ax.plot([x, x], [-0.42, 0.42], color=theme.transition, ls="--", lw=1.2, zorder=1)
 
         ax.set_xlim(-0.7, n - 0.3)
         ax.set_ylim(-1.0, 0.7)
@@ -60,10 +61,10 @@ def render(report, out):
         ax.set_aspect("equal")
         start_utc, end_utc = report.span()
         ax.set_title(f"Lunar almanac — {report.scheme.divisions} divisions · "
-                     f"times in {tz.caption(start_utc, end_utc)}", fontsize=10)
+                     f"times in {tz.caption(start_utc, end_utc)}", fontsize=10, color=theme.fg)
         fig.tight_layout()
         if out:
-            fig.savefig(out, dpi=150)
+            fig.savefig(out, dpi=150, facecolor=fig.get_facecolor())
         else:
             plt.show()
     finally:

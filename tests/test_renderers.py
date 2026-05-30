@@ -246,3 +246,12 @@ def test_chart_renders_both_themes(tmp_path):
         out = tmp_path / f"c-{theme}.png"
         renderers.get("chart")(r, str(out))
         assert out.exists() and out.stat().st_size > 0
+
+
+def test_almanac_renders_both_themes(tmp_path):
+    for theme in ("dark", "light"):
+        r = Report(scheme=S4, mode="events", events=_almanac_report().events,
+                   options={"theme": theme})
+        out = tmp_path / f"a-{theme}.png"
+        renderers.get("almanac")(r, str(out))
+        assert out.exists() and out.stat().st_size > 0
