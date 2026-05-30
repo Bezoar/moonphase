@@ -64,7 +64,9 @@ def _resolve_font(family):
         return None
     import os
     from matplotlib import font_manager
-    if os.path.exists(family):
+    if os.path.isfile(family):
+        # addfont registers the font globally in matplotlib's fontManager for
+        # the lifetime of the process.
         font_manager.fontManager.addfont(family)
         return font_manager.FontProperties(fname=family).get_name()
     available = {f.name for f in font_manager.fontManager.ttflist}
@@ -94,12 +96,14 @@ def _giant_figsize(plt, day_trans, label_of, n_rows, has_legend, family):
         max_rows = max(max_rows, min(len(crossings), _STACK_CAP))
         for idx, local in crossings:
             lines.append(f"{label_of(idx)} @ {local.strftime('%H:%M')}")
+    # char-count proxy for pixel width; fine for short "label @ HH:MM" strings —
+    # the true extent of this pick is then measured by _measure_line_inches.
     longest = max(lines, key=len) if lines else "0 @ 00:00"
     w_in, h_in = _measure_line_inches(plt, longest, family)
-    cell_w = w_in + 0.12
-    cell_h = max_rows * (h_in * 1.30) + 0.06
-    gutter, title = 1.1, 0.6
-    legend = 0.7 if has_legend else 0.2
+    cell_w = w_in + 0.12                        # horizontal padding (inches)
+    cell_h = max_rows * (h_in * 1.30) + 0.06    # 1.30x line spacing + baseline pad
+    gutter, title = 1.1, 0.6                     # left month-label gutter + title bar (inches)
+    legend = 0.7 if has_legend else 0.2          # index-swatch strip allowance
     return gutter + 31 * cell_w, title + n_rows * cell_h + legend
 
 

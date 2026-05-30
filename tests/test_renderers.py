@@ -294,3 +294,10 @@ def test_heatmap_size_override_writes_png(tmp_path):
     out = tmp_path / "sz.png"
     renderers.get("heatmap")(r, str(out))
     assert out.exists() and out.stat().st_size > 0
+
+
+def test_heatmap_unknown_font_raises(tmp_path):
+    r = _heatmap_report(options={"tint": "illumination", "calendar": "gregorian",
+                                 "font": "NonExistentFontXYZ123"})
+    with pytest.raises(ValueError):
+        renderers.get("heatmap")(r, str(tmp_path / "x.png"))
