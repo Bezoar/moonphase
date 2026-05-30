@@ -131,7 +131,8 @@ def test_main_passes_options_to_report(monkeypatch):
     ])
     assert rc == 0
     assert captured["opts"] == {"theme": "light", "tint": "index", "calendar": "lunar",
-                                "lunar_anchor": "full"}
+                                "lunar_anchor": "full", "size": None,
+                                "cell_times": False, "font": None}
 
 
 def test_main_theme_defaults_to_dark(monkeypatch):
@@ -196,3 +197,51 @@ def test_main_labels_malformed_json_is_clean_error(tmp_path, monkeypatch, capsys
     ])
     assert rc == 2
     assert "error:" in capsys.readouterr().err
+
+
+def test_parse_size_ok():
+    assert cli_mod._parse_size("5000x3000") == (5000, 3000)
+    assert cli_mod._parse_size(" 800X600 ") == (800, 600)
+
+
+def test_parse_size_bad():
+    import argparse
+    with pytest.raises(argparse.ArgumentTypeError):
+        cli_mod._parse_size("wide")
+    with pytest.raises(argparse.ArgumentTypeError):
+        cli_mod._parse_size("0x100")
+
+
+def test_cell_times_requires_transitions(monkeypatch, tmp_path, capsys):
+    monkeypatch.setattr(cli_mod, "PhaseEphemeris", _LinearEph)
+    rc = cli_mod.main([
+        "--start", "2026-01-01", "--end", "2026-01-31", "--divisions", "8",
+        "--format", "heatmap", "--cell-times", "--out", str(tmp_path / "h.png"),
+    ])
+    assert rc == 2
+    err = capsys.readouterr().err
+    assert "--cell-times requires --transitions" in err
+
+
+def test_cell_times_rejects_lunar(monkeypatch, tmp_path, capsys):
+    monkeypatch.setattr(cli_mod, "PhaseEphemeris", _LinearEph)
+    rc = cli_mod.main([
+        "--start", "2026-01-01", "--end", "2026-03-31", "--divisions", "8",
+        "--transitions", "--format", "heatmap", "--calendar", "lunar",
+        "--cell-times", "--out", str(tmp_path / "h.png"),
+    ])
+    assert rc == 2
+    err = capsys.readouterr().err
+    assert "--cell-times requires --calendar gregorian" in err
+
+
+def test_cell_times_rejects_non_heatmap_format(monkeypatch, tmp_path, capsys):
+    monkeypatch.setattr(cli_mod, "PhaseEphemeris", _LinearEph)
+    rc = cli_mod.main([
+        "--start", "2026-01-01", "--end", "2026-01-31", "--divisions", "8",
+        "--transitions", "--format", "chart", "--cell-times",
+        "--out", str(tmp_path / "c.png"),
+    ])
+    assert rc == 2
+    err = capsys.readouterr().err
+    assert "--cell-times applies only to --format heatmap" in err

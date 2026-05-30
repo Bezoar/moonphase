@@ -91,8 +91,9 @@ marker, draw the day's transition list:
 
 Empty days (no transition) render exactly as today: tint only, no text.
 
-The principal-phase moon-disk markers are retained; text is positioned to avoid
-the marker corner.
+In cell-times mode the principal-phase moon-disk markers are suppressed: the
+principal phases (New, 1Q, Full, 3Q) appear as plain `label @ HH:MM` text like
+any other microphase transition. (The non-giant heatmap still draws the markers.)
 
 ## Sizing (content-driven, 9 pt floor)
 

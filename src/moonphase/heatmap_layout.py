@@ -64,3 +64,21 @@ def lunations(samples, tz, anchor):
             "days": (e.date() - s.date()).days,
         })
     return segs
+
+
+def transitions_by_day(events, tz, divisions):
+    """Map ``date_iso -> time-sorted [(entered_index, local_datetime), ...]`` for
+    each ``kind == "transition"`` event. A transition event's ``index`` is the
+    microphase being *left*; the phase that takes effect is the one *entered*,
+    ``(index + 1) % divisions``. ``events`` may be ``None``."""
+    out: dict[str, list[tuple[int, object]]] = {}
+    for e in events or []:
+        if e.kind != "transition":
+            continue
+        local = tz.to_display(e.when)
+        day = local.date().isoformat()
+        entered = (e.index + 1) % divisions
+        out.setdefault(day, []).append((entered, local))
+    for day in out:
+        out[day].sort(key=lambda pair: pair[1])
+    return out

@@ -78,6 +78,21 @@ def _parse_sample(s: str) -> timedelta:
             "h": timedelta(hours=n), "d": timedelta(days=n)}[unit]
 
 
+_SIZE_RE = re.compile(r"^\s*([0-9]+)\s*[xX]\s*([0-9]+)\s*$")
+
+
+def _parse_size(s: str) -> tuple[int, int]:
+    """Parse pixel dimensions ``WIDTHxHEIGHT``, e.g. '5000x3000'."""
+    m = _SIZE_RE.match(s)
+    if not m:
+        raise argparse.ArgumentTypeError(
+            f"bad --size {s!r}; expected e.g. '5000x3000' (WIDTHxHEIGHT)")
+    w, h = int(m.group(1)), int(m.group(2))
+    if w <= 0 or h <= 0:
+        raise argparse.ArgumentTypeError("--size dimensions must be positive")
+    return (w, h)
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="moonphase", description=__doc__)
     p.add_argument("--start", type=_parse_date, required=True,
@@ -104,6 +119,13 @@ def build_parser() -> argparse.ArgumentParser:
                    help="heatmap layout: civil months or lunar months")
     p.add_argument("--lunar-anchor", choices=["new", "full"], default="new",
                    help="lunar-month boundary (with --calendar lunar)")
+    p.add_argument("--size", type=_parse_size, default=None,
+                   help="output image size in pixels, WIDTHxHEIGHT (e.g. 5000x3000)")
+    p.add_argument("--cell-times", action="store_true",
+                   help="print transition times inside heatmap day cells "
+                        "(requires --transitions; --calendar gregorian only)")
+    p.add_argument("--font", default=None,
+                   help="font family name, or path to a .ttf/.otf, for heatmap text")
     p.add_argument("--labels", default=None,
                    help="custom microphase names: inline comma list or @file "
                         "(one per line, or JSON index->name); sparse-merged over built-ins")
@@ -118,6 +140,18 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+
+    if args.cell_times:
+        problem = None
+        if args.format != "heatmap":
+            problem = "--cell-times applies only to --format heatmap"
+        elif not args.transitions:
+            problem = "--cell-times requires --transitions"
+        elif args.calendar != "gregorian":
+            problem = "--cell-times requires --calendar gregorian"
+        if problem:
+            print(f"error: {problem}", file=sys.stderr)
+            return 2
 
     scheme = (MicrophaseScheme.from_divisions(args.divisions)
               if args.divisions is not None
@@ -135,7 +169,8 @@ def main(argv: list[str] | None = None) -> int:
     end_utc = zone.to_utc(args.end)
 
     options = {"theme": args.theme, "tint": args.tint, "calendar": args.calendar,
-               "lunar_anchor": args.lunar_anchor}
+               "lunar_anchor": args.lunar_anchor, "size": args.size,
+               "cell_times": args.cell_times, "font": args.font}
 
     eph = PhaseEphemeris(kernel_path=args.ephemeris)
 
