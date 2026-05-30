@@ -1,0 +1,11 @@
+# Code owners for moonphase.
+#
+# Owners listed here can approve a pull request to satisfy the required
+# code-owner review on `main`. Owners who also hold the repository Admin or
+# Maintain role can merge their own PRs without a separate approval (they are
+# bypass actors on the "main-protection" ruleset, in pull-request mode).
+#
+# Keep this list in sync with who holds the Admin/Maintain role: the role
+# governs self-merge/push, this file governs whose approval counts.
+
+* @Bezoar
