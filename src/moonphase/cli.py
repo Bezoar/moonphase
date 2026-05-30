@@ -13,6 +13,26 @@ from .ephemeris import PhaseEphemeris
 from .microphase import MicrophaseScheme
 
 
+def resolve_mode(fmt, requested, modes_for):
+    """Resolve the effective render mode for ``fmt``.
+
+    ``requested`` is the user's --mode (or None). ``modes_for(fmt)`` returns
+    the set of modes the format supports. Single-mode formats auto-resolve;
+    multi-mode formats default to "series"; an incompatible explicit mode
+    raises ValueError listing the supported modes.
+    """
+    supported = modes_for(fmt)
+    if requested is None:
+        if len(supported) == 1:
+            return next(iter(supported))
+        return "series"
+    if requested not in supported:
+        raise ValueError(
+            f"format {fmt!r} supports mode(s): {', '.join(sorted(supported))}"
+        )
+    return requested
+
+
 _STEP_RE = re.compile(r"^\s*([0-9]*\.?[0-9]+)\s*(deg|d|°)?\s*$", re.IGNORECASE)
 
 
