@@ -57,6 +57,7 @@ def render(report, out):
         ax.set_xlim(-0.7, n - 0.3)
         ax.set_ylim(-1.0, 0.7)
         ax.axis("off")
+        ax.set_aspect("equal")
         start_utc, end_utc = report.span()
         ax.set_title(f"Lunar almanac — {report.scheme.divisions} divisions · "
                      f"times in {tz.caption(start_utc, end_utc)}", fontsize=10)
