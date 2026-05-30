@@ -213,7 +213,7 @@ from moonphase import (
     PhaseEphemeris,     # Skyfield-backed phase-angle lookup
     PhaseSample,        # (when, angle_deg, microphase)
     PhaseEvent,         # (when, angle_deg, kind, index, name)
-    Report,             # renderer context: (scheme, mode, samples, events, tz, labels)
+    Report,             # renderer context: (scheme, mode, samples, events, tz, labels, options)
     build_series,       # sampled series
     build_events,       # exact phase-center / transition instants
     phase_to_index,     # centered microphase bucketing
