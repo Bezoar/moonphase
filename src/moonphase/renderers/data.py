@@ -12,7 +12,7 @@ from ..microphase import MicrophaseScheme
 from . import register
 
 
-@register("csv")
+@register("csv", modes={"series", "events"})
 def render_csv(samples: Iterable[PhaseSample], scheme: MicrophaseScheme, out: str | None) -> None:
     f = open(out, "w", newline="") if out else sys.stdout
     try:
@@ -31,7 +31,7 @@ def render_csv(samples: Iterable[PhaseSample], scheme: MicrophaseScheme, out: st
             f.close()
 
 
-@register("json")
+@register("json", modes={"series", "events"})
 def render_json(samples: Iterable[PhaseSample], scheme: MicrophaseScheme, out: str | None) -> None:
     payload = {
         "scheme": {"divisions": scheme.divisions, "step_deg": scheme.step_deg},

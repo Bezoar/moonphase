@@ -19,7 +19,7 @@ def _glyph(idx: int, divisions: int) -> str:
     return _GLYPHS[bucket]
 
 
-@register("terminal")
+@register("terminal", modes={"series", "events"})
 def render(samples: Iterable[PhaseSample], scheme: MicrophaseScheme, out: str | None) -> None:
     by_day: dict[str, list[PhaseSample]] = defaultdict(list)
     for s in samples:

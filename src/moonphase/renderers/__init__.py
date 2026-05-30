@@ -1,40 +1,54 @@
 """Output renderer registry.
 
-Adding a new format (PDF, HTML, ICS, ...) is a one-liner: define a function
-``render(samples, scheme, out)`` and decorate with ``@register("name")``.
-The CLI exposes every registered name via ``--format``.
+A renderer is ``render(report, out) -> None``. Register it with the modes it
+supports; the CLI uses ``available(mode)`` to validate ``--format`` against
+the resolved mode.
 """
 
 from __future__ import annotations
 
-from typing import Callable, Iterable
+from typing import Callable
 
-from ..calendar import PhaseSample
-from ..microphase import MicrophaseScheme
+from ..report import Report
 
-Renderer = Callable[[Iterable[PhaseSample], MicrophaseScheme, str | None], None]
+Renderer = Callable[[Report, "str | None"], None]
 
-_REGISTRY: dict[str, Renderer] = {}
+_REGISTRY: dict[str, dict] = {}
 
 
-def register(name: str) -> Callable[[Renderer], Renderer]:
+def register(name: str, modes):
+    """Decorator: register ``fn`` as renderer ``name`` supporting ``modes``
+    (a set/iterable of "series" / "events")."""
+    modes = frozenset(modes)
+    if not modes <= {"series", "events"}:
+        raise ValueError(f"invalid modes {set(modes)!r} for renderer {name!r}")
+
     def deco(fn: Renderer) -> Renderer:
         if name in _REGISTRY:
             raise ValueError(f"renderer {name!r} already registered")
-        _REGISTRY[name] = fn
+        _REGISTRY[name] = {"fn": fn, "modes": modes}
         return fn
     return deco
 
 
 def get(name: str) -> Renderer:
     try:
-        return _REGISTRY[name]
+        return _REGISTRY[name]["fn"]
     except KeyError as e:
         raise KeyError(f"unknown renderer {name!r}; available: {sorted(_REGISTRY)}") from e
 
 
-def available() -> list[str]:
-    return sorted(_REGISTRY)
+def modes_for(name: str) -> frozenset:
+    try:
+        return _REGISTRY[name]["modes"]
+    except KeyError as e:
+        raise KeyError(f"unknown renderer {name!r}; available: {sorted(_REGISTRY)}") from e
+
+
+def available(mode: str | None = None) -> list[str]:
+    if mode is None:
+        return sorted(_REGISTRY)
+    return sorted(n for n, v in _REGISTRY.items() if mode in v["modes"])
 
 
 # Import side-effect: register built-in renderers.

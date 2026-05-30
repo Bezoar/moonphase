@@ -12,7 +12,7 @@ from ..microphase import MicrophaseScheme
 from . import register
 
 
-@register("chart")
+@register("chart", modes={"series", "events"})
 def render(samples: Iterable[PhaseSample], scheme: MicrophaseScheme, out: str | None) -> None:
     import matplotlib.dates as mdates
     import matplotlib.pyplot as plt
