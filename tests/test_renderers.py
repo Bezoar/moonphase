@@ -213,6 +213,13 @@ def test_heatmap_empty_samples_raises(tmp_path):
         renderers.get("heatmap")(r, str(tmp_path / "x.png"))
 
 
+def test_heatmap_light_theme_and_index_legend(tmp_path):
+    out = tmp_path / "hl.png"
+    renderers.get("heatmap")(_heatmap_report(options={"tint": "index",
+                             "calendar": "gregorian", "theme": "light"}), str(out))
+    assert out.exists() and out.stat().st_size > 0
+
+
 def test_csv_events_use_custom_label(tmp_path):
     evs = [PhaseEvent(when=T0, angle_deg=0.0, kind="center", index=0, name="Dark")]
     r = Report(scheme=S4, mode="events", events=evs)
