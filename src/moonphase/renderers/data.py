@@ -1,45 +1,52 @@
-"""CSV and JSON renderers."""
+"""CSV and JSON renderers (series rows or event rows)."""
 
 from __future__ import annotations
 
 import csv
 import json
 import sys
-from typing import Iterable
 
-from ..calendar import PhaseSample
-from ..microphase import MicrophaseScheme
 from . import register
 
 
-@register("csv")
-def render_csv(samples: Iterable[PhaseSample], scheme: MicrophaseScheme, out: str | None) -> None:
+@register("csv", modes={"series", "events"})
+def render_csv(report, out):
     f = open(out, "w", newline="") if out else sys.stdout
+    s = report.scheme
     try:
         w = csv.writer(f)
-        w.writerow(["utc", "phase_angle_deg", "microphase_index", "divisions", "step_deg"])
-        for s in samples:
-            w.writerow([
-                s.when.isoformat(),
-                f"{s.angle_deg:.6f}",
-                s.microphase,
-                scheme.divisions,
-                f"{scheme.step_deg:.6f}",
-            ])
+        if report.mode == "events":
+            w.writerow(["time", "target_angle_deg", "kind", "microphase_index",
+                        "name", "divisions", "step_deg"])
+            for e in report.events or []:
+                w.writerow([e.when.isoformat(), f"{e.angle_deg:.6f}", e.kind,
+                            e.index, e.name or "", s.divisions, f"{s.step_deg:.6f}"])
+        else:
+            w.writerow(["time", "phase_angle_deg", "microphase_index",
+                        "divisions", "step_deg"])
+            for p in report.samples or []:
+                w.writerow([p.when.isoformat(), f"{p.angle_deg:.6f}", p.microphase,
+                            s.divisions, f"{s.step_deg:.6f}"])
     finally:
         if out:
             f.close()
 
 
-@register("json")
-def render_json(samples: Iterable[PhaseSample], scheme: MicrophaseScheme, out: str | None) -> None:
-    payload = {
-        "scheme": {"divisions": scheme.divisions, "step_deg": scheme.step_deg},
-        "samples": [
-            {"utc": s.when.isoformat(), "angle_deg": s.angle_deg, "microphase": s.microphase}
-            for s in samples
-        ],
-    }
+@register("json", modes={"series", "events"})
+def render_json(report, out):
+    s = report.scheme
+    payload = {"scheme": {"divisions": s.divisions, "step_deg": s.step_deg}}
+    if report.mode == "events":
+        payload["events"] = [
+            {"time": e.when.isoformat(), "angle_deg": e.angle_deg, "kind": e.kind,
+             "index": e.index, "name": e.name}
+            for e in report.events or []
+        ]
+    else:
+        payload["samples"] = [
+            {"time": p.when.isoformat(), "angle_deg": p.angle_deg, "microphase": p.microphase}
+            for p in report.samples or []
+        ]
     if out:
         with open(out, "w") as f:
             json.dump(payload, f, indent=2)

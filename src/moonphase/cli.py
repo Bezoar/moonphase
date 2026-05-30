@@ -10,7 +10,29 @@ from datetime import datetime, timedelta, timezone
 from . import renderers
 from .calendar import build_series
 from .ephemeris import PhaseEphemeris
+from .events import build_events
 from .microphase import MicrophaseScheme
+from .report import Report
+
+
+def resolve_mode(fmt, requested, modes_for):
+    """Resolve the effective render mode for ``fmt``.
+
+    ``requested`` is the user's --mode (or None). ``modes_for(fmt)`` returns
+    the set of modes the format supports. Single-mode formats auto-resolve;
+    multi-mode formats default to "series"; an incompatible explicit mode
+    raises ValueError listing the supported modes.
+    """
+    supported = modes_for(fmt)
+    if requested is None:
+        if len(supported) == 1:
+            return next(iter(supported))
+        return "series"
+    if requested not in supported:
+        raise ValueError(
+            f"format {fmt!r} supports mode(s): {', '.join(sorted(supported))}"
+        )
+    return requested
 
 
 _STEP_RE = re.compile(r"^\s*([0-9]*\.?[0-9]+)\s*(deg|d|°)?\s*$", re.IGNORECASE)
@@ -55,6 +77,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     p.add_argument("--sample", type=_parse_sample, default=timedelta(hours=1),
                    help="sampling cadence (default: 1h)")
+    p.add_argument("--mode", choices=["series", "events"], default=None,
+                   help="output mode; auto-resolved from --format when omitted")
+    p.add_argument("--transitions", action="store_true",
+                   help="include transition points (overlays in series; rows in events)")
     p.add_argument("--format", default="chart", choices=renderers.available(),
                    help="output renderer")
     p.add_argument("--out", default=None,
@@ -71,10 +97,28 @@ def main(argv: list[str] | None = None) -> int:
               if args.divisions is not None
               else MicrophaseScheme.from_step(args.step))
 
+    try:
+        mode = resolve_mode(args.format, args.mode, renderers.modes_for)
+    except ValueError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 2
+
     eph = PhaseEphemeris(kernel_path=args.ephemeris)
-    samples = build_series(args.start, args.end, scheme,
-                           sample_step=args.sample, ephemeris=eph)
-    renderers.get(args.format)(samples, scheme, args.out)
+
+    if mode == "events":
+        # --sample does not apply in events mode (events are root-found, not sampled)
+        events = build_events(args.start, args.end, scheme, eph,
+                              transitions=args.transitions)
+        report = Report(scheme=scheme, mode="events", events=events)
+    else:
+        samples = build_series(args.start, args.end, scheme,
+                               sample_step=args.sample, ephemeris=eph)
+        # series-mode events: phase centers always, transitions when requested
+        events = build_events(args.start, args.end, scheme, eph,
+                              transitions=args.transitions)
+        report = Report(scheme=scheme, mode="series", samples=samples, events=events)
+
+    renderers.get(args.format)(report, args.out)
     return 0
 
 
