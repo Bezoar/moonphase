@@ -61,31 +61,30 @@ def _render_gregorian(plt, report, samples, tint, caption, out):
     scheme = report.scheme
     cells = {d: (a, i) for d, a, i in day_cells(samples, report.tz)}
     marks = principal_phase_days(samples, report.tz)
-    years = sorted({d[:4] for d in cells})
-    fig, ax = plt.subplots(figsize=(11, 0.5 + 0.42 * 12 * len(years)))
+    months = sorted({d[:7] for d in cells})          # 'YYYY-MM', only months with data
+    fig, ax = plt.subplots(figsize=(11, 0.6 + 0.42 * len(months)))
     try:
-        row = 0
-        for y in years:
-            for m in range(1, 13):
-                ax.text(-0.6, row + 0.5, f"{_MON[m - 1]} {y}", ha="right", va="center",
-                        fontsize=7)
-                ndays = (date(int(y) + (m // 12), (m % 12) + 1, 1)
-                         - date(int(y), m, 1)).days
-                for dd in range(1, ndays + 1):
-                    key = f"{y}-{m:02d}-{dd:02d}"
-                    if key not in cells:
-                        continue
-                    a, i = cells[key]
-                    ax.add_patch(plt.Rectangle((dd - 1, row), 0.94, 0.94,
-                                 facecolor=_tint(a, i, scheme, tint), edgecolor="none"))
-                    if key in marks:
-                        _draw_marker(ax, dd - 0.53, row + 0.47, 0.30, marks[key])
-                row += 1
+        for row, ym in enumerate(months):
+            y, m = ym[:4], int(ym[5:7])
+            ax.text(-0.6, row + 0.5, f"{_MON[m - 1]} {y}", ha="right", va="center",
+                    fontsize=7)
+            ndays = (date(int(y) + (m // 12), (m % 12) + 1, 1)
+                     - date(int(y), m, 1)).days
+            for dd in range(1, ndays + 1):
+                key = f"{y}-{m:02d}-{dd:02d}"
+                if key not in cells:
+                    continue
+                a, i = cells[key]
+                ax.add_patch(plt.Rectangle((dd - 1, row), 0.94, 0.94,
+                             facecolor=_tint(a, i, scheme, tint), edgecolor="none"))
+                if key in marks:
+                    _draw_marker(ax, dd - 0.53, row + 0.47, 0.30, marks[key])
         ax.set_xlim(-0.5, 31)
-        ax.set_ylim(row, -0.5)
+        ax.set_ylim(len(months), -0.5)
         ax.set_xticks([0.5, 9.5, 19.5, 29.5])
         ax.set_xticklabels(["1", "10", "20", "30"], fontsize=7)
         ax.set_yticks([])
+        years = sorted({d[:4] for d in cells})
         ax.set_title(f"{', '.join(years)} — {scheme.divisions} microphases · "
                      f"tint: {tint} · times in {caption}", fontsize=10)
         fig.tight_layout()
