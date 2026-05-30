@@ -102,12 +102,14 @@ def _giant_figsize(plt, day_trans, label_of, n_rows, has_legend, family):
     w_in, h_in = _measure_line_inches(plt, longest, family)
     cell_w = w_in + 0.12                        # horizontal padding (inches)
     text_h = max_rows * (h_in * 1.30) + 0.06    # 1.30x line spacing + baseline pad
-    # at least square (cell_h >= cell_w) so a couple of stacked transitions have
+    # at least square (cell >= cell_w) so a couple of stacked transitions have
     # vertical room; taller still when a day needs more than ~one line of text
-    cell_h = max(text_h, cell_w)
-    gutter, title = 1.1, 0.9                     # left month-label gutter + title/day-axis (inches)
-    legend = 0.9 if has_legend else 0.4          # day-of-month axis (+ index swatch) allowance
-    return gutter + 31 * cell_w, title + n_rows * cell_h + legend
+    cell = max(text_h, cell_w)
+    gutter, title = 2.0, 1.2                      # left month-label gutter + title bar (inches)
+    band = _bottom_band(has_legend, giant=True)   # day-of-month axis (+ swatch) region
+    # rows ~`cell` inches tall; the bottom band gets the same per-row inches so
+    # the enlarged day-axis / legend labels have room.
+    return gutter + 31 * cell_w, title + cell * (n_rows + band + 0.5)
 
 
 def _resolve_figsize(plt, size, cell_times, day_trans, label_of, n_rows,
@@ -129,6 +131,21 @@ def _resolve_figsize(plt, size, cell_times, day_trans, label_of, n_rows,
     if size is not None:
         return (size[0] / _DPI, size[1] / _DPI)
     return None
+
+
+def _bottom_band(has_legend, giant):
+    """Data-unit height of the region below the grid (day-of-month axis, plus the
+    index swatch when present). Larger in giant mode to fit enlarged labels."""
+    if giant:
+        return 3.2 if has_legend else 1.3
+    return 1.95 if has_legend else 0.75
+
+
+def _label_scale(figsize):
+    """Scale factor for the structural labels (title, months, day axis, legend) so
+    they stay legible when a giant figure is viewed zoomed out. 1.0 at the default
+    11-inch width; grows with the figure. Cell-time text intentionally stays 9 pt."""
+    return max(1.0, min(1.0 + (figsize[0] - 11.0) / 6.0, 6.0))
 
 
 def _draw_marker(ax, cx, cy, rr, principal_index, theme):
@@ -160,24 +177,27 @@ def _draw_cell_times(ax, x0, row, crossings, cell, scheme, tint, label_of):
             zorder=8)
 
 
-def _index_legend(plt, ax, scheme, theme, x0, width, y, h):
-    """A discrete 0..N-1 swatch strip, shown for index tint."""
+def _index_legend(plt, ax, scheme, theme, x0, width, y, h, scale=1.0, cap_below=False):
+    """A discrete 0..N-1 swatch strip, shown for index tint. ``cap_below`` places
+    the end captions under the swatch (giant charts) rather than above it."""
     n = scheme.divisions
     sw = width / n
     for k in range(n):
         ax.add_patch(plt.Rectangle((x0 + k * sw, y), sw, h,
                                    facecolor=_index_color(k, n), edgecolor="none"))
-    ax.text(x0, y - 0.3, "microphase 0", color=theme.muted, fontsize=7, ha="left", va="bottom")
-    ax.text(x0 + width, y - 0.3, str(n - 1), color=theme.muted, fontsize=7, ha="right", va="bottom")
+    fs = round(7 * scale)
+    cap_y, va = (y + h + 0.1 * scale + 0.05, "top") if cap_below else (y - 0.3, "bottom")
+    ax.text(x0, cap_y, "microphase 0", color=theme.muted, fontsize=fs, ha="left", va=va)
+    ax.text(x0 + width, cap_y, str(n - 1), color=theme.muted, fontsize=fs, ha="right", va=va)
 
 
-def _finish(plt, fig, ax, theme, title):
+def _finish(plt, fig, ax, theme, title, scale=1.0):
     fig.patch.set_facecolor(theme.bg)
     ax.set_facecolor(theme.bg)
     for spine in ax.spines.values():
         spine.set_color(theme.spine)
     ax.tick_params(colors=theme.fg)
-    ax.set_title(title, fontsize=10, color=theme.fg)
+    ax.set_title(title, fontsize=round(10 * scale), color=theme.fg)
 
 
 @register("heatmap", modes={"series"})
@@ -215,6 +235,7 @@ def _render_gregorian(plt, report, samples, tint, caption, theme, out):
                                nrows, legend, family)
     if figsize is None:
         figsize = (11, 0.9 + 0.42 * nrows)
+    scale = _label_scale(figsize)
 
     ctx = (matplotlib.rc_context({"font.family": family}) if family
            else nullcontext())
@@ -223,8 +244,9 @@ def _render_gregorian(plt, report, samples, tint, caption, theme, out):
         try:
             for row, ym in enumerate(months):
                 y, m = ym[:4], int(ym[5:7])
-                ax.text(-0.6, row + 0.5, f"{_MON[m - 1]} {y}", ha="right",
-                        va="center", fontsize=7, color=theme.fg)
+                if not cell_times:               # giant charts label months as
+                    ax.text(-0.6, row + 0.5, f"{_MON[m - 1]} {y}", ha="right",
+                            va="center", fontsize=7, color=theme.fg)
                 ndays = (date(int(y) + (m // 12), (m % 12) + 1, 1)
                          - date(int(y), m, 1)).days
                 for dd in range(1, ndays + 1):
@@ -244,23 +266,37 @@ def _render_gregorian(plt, report, samples, tint, caption, theme, out):
                     if cell_times and key in day_trans:
                         _draw_cell_times(ax, dd - 1, row, day_trans[key],
                                          cells[key], scheme, tint, label_of)
+            # Giant charts label months as proper y-ticks so tight_layout reserves
+            # the (enlarged) left margin; the normal heatmap keeps the inline text
+            # drawn above and an empty y-axis.
+            if cell_times:
+                ax.set_yticks([r + 0.5 for r in range(nrows)])
+                ax.set_yticklabels([f"{_MON[int(ym[5:7]) - 1]} {ym[:4]}" for ym in months],
+                                   fontsize=round(7 * scale), color=theme.fg)
+                ax.tick_params(axis="y", length=0)
+            else:
+                ax.set_yticks([])
             # A single day-of-month axis directly beneath the grid, ticked and
             # labelled every 7 days (replaces matplotlib's bottom tick axis).
             for d in (1, 8, 15, 22, 29):
                 x = d - 0.5
-                ax.plot([x, x], [nrows + 0.02, nrows + 0.16], color=theme.spine, lw=0.9)
+                ax.plot([x, x], [nrows + 0.02, nrows + 0.16], color=theme.spine,
+                        lw=0.9 * min(scale, 3))
                 ax.text(x, nrows + 0.22, str(d), ha="center", va="top",
-                        fontsize=9, color=theme.fg)
+                        fontsize=round(9 * scale), color=theme.fg)
             if legend:
-                _index_legend(plt, ax, scheme, theme, 0, 14, nrows + 1.05, 0.5)
+                if cell_times:
+                    _index_legend(plt, ax, scheme, theme, 0, 14, nrows + 1.6, 0.6,
+                                  scale=scale, cap_below=True)
+                else:
+                    _index_legend(plt, ax, scheme, theme, 0, 14, nrows + 1.05, 0.5)
             ax.set_xlim(-0.5, 31)
-            ax.set_ylim(nrows + (1.95 if legend else 0.75), -0.5)
+            ax.set_ylim(nrows + _bottom_band(legend, cell_times), -0.5)
             ax.set_xticks([])
-            ax.set_yticks([])
             years = sorted({d[:4] for d in cells})
             _finish(plt, fig, ax, theme,
                     f"{', '.join(years)} — {scheme.divisions} microphases · "
-                    f"tint: {tint} · times in {caption}")
+                    f"tint: {tint} · times in {caption}", scale=scale)
             fig.tight_layout()
             _save(plt, fig, out)
         finally:
