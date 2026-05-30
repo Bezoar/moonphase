@@ -229,3 +229,13 @@ def test_chart_uses_report_labels(tmp_path):
     out = tmp_path / "c.png"
     renderers.get("chart")(r, str(out))            # smoke: renders with custom axis
     assert out.exists() and out.stat().st_size > 0
+
+
+def test_chart_renders_both_themes(tmp_path):
+    samples = [PhaseSample(when=T0, angle_deg=0.0, microphase=0),
+               PhaseSample(when=T0.replace(hour=12), angle_deg=6.0, microphase=0)]
+    for theme in ("dark", "light"):
+        r = Report(scheme=S4, mode="series", samples=samples, options={"theme": theme})
+        out = tmp_path / f"c-{theme}.png"
+        renderers.get("chart")(r, str(out))
+        assert out.exists() and out.stat().st_size > 0

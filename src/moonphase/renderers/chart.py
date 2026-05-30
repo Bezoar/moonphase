@@ -1,11 +1,12 @@
 """Matplotlib strip-chart: elongation vs time, centered phase bands, named
-phases on the left axis, degrees on the right, with exact event overlays."""
+phases on the left axis, degrees on the right, with on-curve event markers."""
 
 from __future__ import annotations
 
 import numpy as np
 
 from ..naming import default_name
+from ..theme import style_axes, theme_of
 from . import register
 
 
@@ -16,10 +17,10 @@ def render(report, out):
 
     s = report.scheme
     step = s.step_deg
+    theme = theme_of(report)
     fig, ax = plt.subplots(figsize=(12, 3.5))
     try:
-        # plot display-zone wall-clock (naive) so the x-axis matches the
-        # "times in <zone>" caption; matplotlib labels naive values verbatim
+        # plot display-zone wall-clock (naive) so the x-axis matches the caption
         def _disp(when):
             return report.tz.to_display(when).replace(tzinfo=None)
 
@@ -30,7 +31,8 @@ def render(report, out):
                 raise ValueError("no samples to render")
             times = [_disp(p.when) for p in samples]
             angles = np.array([p.angle_deg for p in samples])
-            sc = ax.scatter(times, angles, c=angles, cmap="twilight", s=4, marker="s")
+            sc = ax.scatter(times, angles, c=angles, cmap="twilight",
+                            vmin=0, vmax=360, s=4, marker="s")
         elif not (report.events or []):
             raise ValueError("no events to render")
 
@@ -38,16 +40,21 @@ def render(report, out):
         for k in range(0, s.divisions, 2):
             lo, hi = (k - 0.5) * step, (k + 0.5) * step
             if lo < 0:
-                ax.axhspan(0, hi, color="black", alpha=0.04)
-                ax.axhspan(360 + lo, 360, color="black", alpha=0.04)
+                ax.axhspan(0, hi, color=theme.band, alpha=theme.band_alpha)
+                ax.axhspan(360 + lo, 360, color=theme.band, alpha=theme.band_alpha)
             else:
-                ax.axhspan(lo, hi, color="black", alpha=0.04)
+                ax.axhspan(lo, hi, color=theme.band, alpha=theme.band_alpha)
 
-        # event overlays: solid = centers, dashed orange = transitions
+        # on-curve event markers: filled dots (colored by phase) = centers,
+        # open orange rings = transitions
         for e in report.events or []:
-            ax.axvline(_disp(e.when),
-                       color=("#d98324" if e.kind == "transition" else "#5b6b8a"),
-                       lw=0.6, ls=("--" if e.kind == "transition" else "-"), alpha=0.7)
+            x, y = _disp(e.when), e.angle_deg
+            if e.kind == "transition":
+                ax.scatter([x], [y], s=34, facecolors="none",
+                           edgecolors=theme.transition, linewidths=1.3, zorder=5)
+            else:
+                ax.scatter([x], [y], c=[y], cmap="twilight", vmin=0, vmax=360,
+                           s=30, edgecolors=theme.fg, linewidths=0.6, zorder=6)
 
         ax.set_ylim(0, 360)
         ax.yaxis.tick_right()
@@ -68,12 +75,25 @@ def render(report, out):
                      f"times in {caption}", fontsize=10)
         ax.xaxis.set_major_locator(mdates.AutoDateLocator())
         ax.xaxis.set_major_formatter(mdates.ConciseDateFormatter(ax.xaxis.get_major_locator()))
-        if sc is not None:
-            fig.colorbar(sc, ax=ax, label="phase angle", pad=0.08)
-        fig.tight_layout()
+        # daily / weekly minor tick marks for a calendar feel (range-adaptive)
+        span_days = (end_utc - start_utc).days if (start_utc and end_utc) else 0
+        if 0 < span_days <= 120:
+            ax.xaxis.set_minor_locator(mdates.DayLocator())
+        elif span_days <= 800:
+            ax.xaxis.set_minor_locator(mdates.DayLocator(interval=7))
 
+        style_axes(fig, ax, theme)
+        axL.tick_params(colors=theme.fg)
+        axL.spines["left"].set_color(theme.spine)
+        if sc is not None:
+            cbar = fig.colorbar(sc, ax=ax, label="phase angle", pad=0.08)
+            cbar.ax.yaxis.set_tick_params(color=theme.fg, labelcolor=theme.fg)
+            cbar.set_label("phase angle", color=theme.fg)
+            cbar.outline.set_edgecolor(theme.spine)
+
+        fig.tight_layout()
         if out:
-            fig.savefig(out, dpi=150)
+            fig.savefig(out, dpi=150, facecolor=fig.get_facecolor())
         else:
             plt.show()
     finally:
