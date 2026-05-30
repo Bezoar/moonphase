@@ -139,6 +139,7 @@ moonphase --start DATE --end DATE
           [--transitions]            # include transition points
           [--sample DUR]             # series cadence (e.g. 30m, 1h, 2d); series mode only
           [--format {chart,heatmap,almanac,csv,json,terminal}]
+          [--theme {dark,light}]     # color theme (default: dark)
           [--tint {illumination,index}]        # heatmap cell tint
           [--calendar {gregorian,lunar}]       # heatmap layout
           [--lunar-anchor {new,full}]          # lunar-month boundary
