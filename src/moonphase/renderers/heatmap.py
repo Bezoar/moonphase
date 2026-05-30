@@ -301,6 +301,6 @@ def _render_lunar(plt, report, samples, tint, anchor, caption, theme, out):
 
 def _save(plt, fig, out):
     if out:
-        fig.savefig(out, dpi=150, facecolor=fig.get_facecolor())
+        fig.savefig(out, dpi=_DPI, facecolor=fig.get_facecolor())
     else:
         plt.show()
