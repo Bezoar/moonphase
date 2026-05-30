@@ -1,0 +1,209 @@
+# Sample charts — 2026
+
+Rendered output of every visual `moonphase` renderer for the **2026** lunar year, at
+**8** and **16** microphase divisions, computed from the real JPL **DE421** ephemeris.
+
+- Times are pinned to **UTC** with the `…Z` suffix; **bare dates** (e.g. `2026-01-01`)
+  would instead use your local timezone, and the caption/timestamps would change to match.
+- Run the commands from the **repository root**. The `moonphase` console script is installed
+  by `pip install -e .`; the DE421 kernel (~17 MB) downloads to `./data/` on first use.
+- The **almanac** uses a Jan–Feb window (≈2 lunations) — a full-year microphase ribbon would
+  be unreadably dense.
+
+---
+
+## Strip-chart — `chart`
+
+Elongation (0–360°) vs. time; named phases on the left axis, degrees on the right, centered
+phase bands, with phase-center markers overlaid.
+
+**8 divisions**
+
+![Strip-chart, 8 divisions, 2026](chart-2026-8div.png)
+
+```bash
+moonphase --start 2026-01-01T00:00Z --end 2026-12-31T23:00Z \
+          --divisions 8 --format chart --out samples/chart-2026-8div.png
+```
+
+**16 divisions**
+
+![Strip-chart, 16 divisions, 2026](chart-2026-16div.png)
+
+```bash
+moonphase --start 2026-01-01T00:00Z --end 2026-12-31T23:00Z \
+          --divisions 16 --format chart --out samples/chart-2026-16div.png
+```
+
+---
+
+## Calendar heatmap — Gregorian months × days
+
+`--calendar gregorian` (the default): one row per calendar month, one cell per day, with a
+moon-disk marker on each principal-phase day.
+
+### `--tint illumination` (grayscale by lit fraction)
+
+**8 divisions**
+
+![Gregorian heatmap, illumination tint, 8 divisions](heatmap-gregorian-illumination-2026-8div.png)
+
+```bash
+moonphase --start 2026-01-01T00:00Z --end 2026-12-31T23:00Z \
+          --divisions 8 --format heatmap --tint illumination \
+          --out samples/heatmap-gregorian-illumination-2026-8div.png
+```
+
+**16 divisions**
+
+![Gregorian heatmap, illumination tint, 16 divisions](heatmap-gregorian-illumination-2026-16div.png)
+
+```bash
+moonphase --start 2026-01-01T00:00Z --end 2026-12-31T23:00Z \
+          --divisions 16 --format heatmap --tint illumination \
+          --out samples/heatmap-gregorian-illumination-2026-16div.png
+```
+
+### `--tint index` (a distinct hue per microphase)
+
+**8 divisions**
+
+![Gregorian heatmap, index tint, 8 divisions](heatmap-gregorian-index-2026-8div.png)
+
+```bash
+moonphase --start 2026-01-01T00:00Z --end 2026-12-31T23:00Z \
+          --divisions 8 --format heatmap --tint index \
+          --out samples/heatmap-gregorian-index-2026-8div.png
+```
+
+**16 divisions**
+
+![Gregorian heatmap, index tint, 16 divisions](heatmap-gregorian-index-2026-16div.png)
+
+```bash
+moonphase --start 2026-01-01T00:00Z --end 2026-12-31T23:00Z \
+          --divisions 16 --format heatmap --tint index \
+          --out samples/heatmap-gregorian-index-2026-16div.png
+```
+
+---
+
+## Calendar heatmap — Lunar months
+
+`--calendar lunar`: one phase-aligned strip per lunation, labelled with the Gregorian
+start (left), end (right), and opposite-anchor mid date (below center).
+
+### New-moon boundaries (`--lunar-anchor new`), illumination tint
+
+**8 divisions**
+
+![Lunar heatmap, new anchor, illumination, 8 divisions](heatmap-lunar-new-illumination-2026-8div.png)
+
+```bash
+moonphase --start 2026-01-01T00:00Z --end 2026-12-31T23:00Z \
+          --divisions 8 --format heatmap --calendar lunar --lunar-anchor new \
+          --tint illumination --out samples/heatmap-lunar-new-illumination-2026-8div.png
+```
+
+**16 divisions**
+
+![Lunar heatmap, new anchor, illumination, 16 divisions](heatmap-lunar-new-illumination-2026-16div.png)
+
+```bash
+moonphase --start 2026-01-01T00:00Z --end 2026-12-31T23:00Z \
+          --divisions 16 --format heatmap --calendar lunar --lunar-anchor new \
+          --tint illumination --out samples/heatmap-lunar-new-illumination-2026-16div.png
+```
+
+### New-moon boundaries, index tint
+
+**8 divisions**
+
+![Lunar heatmap, new anchor, index, 8 divisions](heatmap-lunar-new-index-2026-8div.png)
+
+```bash
+moonphase --start 2026-01-01T00:00Z --end 2026-12-31T23:00Z \
+          --divisions 8 --format heatmap --calendar lunar --lunar-anchor new \
+          --tint index --out samples/heatmap-lunar-new-index-2026-8div.png
+```
+
+**16 divisions**
+
+![Lunar heatmap, new anchor, index, 16 divisions](heatmap-lunar-new-index-2026-16div.png)
+
+```bash
+moonphase --start 2026-01-01T00:00Z --end 2026-12-31T23:00Z \
+          --divisions 16 --format heatmap --calendar lunar --lunar-anchor new \
+          --tint index --out samples/heatmap-lunar-new-index-2026-16div.png
+```
+
+### Full-moon boundaries (`--lunar-anchor full`), illumination tint
+
+**8 divisions**
+
+![Lunar heatmap, full anchor, illumination, 8 divisions](heatmap-lunar-full-illumination-2026-8div.png)
+
+```bash
+moonphase --start 2026-01-01T00:00Z --end 2026-12-31T23:00Z \
+          --divisions 8 --format heatmap --calendar lunar --lunar-anchor full \
+          --tint illumination --out samples/heatmap-lunar-full-illumination-2026-8div.png
+```
+
+**16 divisions**
+
+![Lunar heatmap, full anchor, illumination, 16 divisions](heatmap-lunar-full-illumination-2026-16div.png)
+
+```bash
+moonphase --start 2026-01-01T00:00Z --end 2026-12-31T23:00Z \
+          --divisions 16 --format heatmap --calendar lunar --lunar-anchor full \
+          --tint illumination --out samples/heatmap-lunar-full-illumination-2026-16div.png
+```
+
+### Full-moon boundaries, index tint
+
+**8 divisions**
+
+![Lunar heatmap, full anchor, index, 8 divisions](heatmap-lunar-full-index-2026-8div.png)
+
+```bash
+moonphase --start 2026-01-01T00:00Z --end 2026-12-31T23:00Z \
+          --divisions 8 --format heatmap --calendar lunar --lunar-anchor full \
+          --tint index --out samples/heatmap-lunar-full-index-2026-8div.png
+```
+
+**16 divisions**
+
+![Lunar heatmap, full anchor, index, 16 divisions](heatmap-lunar-full-index-2026-16div.png)
+
+```bash
+moonphase --start 2026-01-01T00:00Z --end 2026-12-31T23:00Z \
+          --divisions 16 --format heatmap --calendar lunar --lunar-anchor full \
+          --tint index --out samples/heatmap-lunar-full-index-2026-16div.png
+```
+
+---
+
+## Almanac ribbon — `almanac`
+
+Rendered moon disks at each exact phase center (name + UTC date/time), with transition
+points dashed between. Shown for **Jan–Feb 2026** (≈2 lunations).
+
+**8 divisions**
+
+![Almanac, 8 divisions, Jan–Feb 2026](almanac-2026-jan-feb-8div.png)
+
+```bash
+moonphase --start 2026-01-01T00:00Z --end 2026-02-28T23:00Z \
+          --divisions 8 --format almanac --transitions \
+          --out samples/almanac-2026-jan-feb-8div.png
+```
+
+**16 divisions**
+
+![Almanac, 16 divisions, Jan–Feb 2026](almanac-2026-jan-feb-16div.png)
+
+```bash
+moonphase --start 2026-01-01T00:00Z --end 2026-02-28T23:00Z \
+          --divisions 16 --format almanac --transitions \
+          --out samples/almanac-2026-jan-feb-16div.png
+```
