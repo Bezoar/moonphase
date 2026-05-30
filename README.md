@@ -145,7 +145,7 @@ moonphase --start DATE --end DATE
           [--lunar-anchor {new,full}]          # lunar-month boundary
           [--size WxH]               # output image size in px (e.g. 5000x3000)
           [--cell-times]             # heatmap: print transition times in cells (needs --transitions, gregorian)
-          [--font NAME|PATH]         # font family name or .ttf/.otf path for chart text
+          [--font NAME|PATH]         # font family name or .ttf/.otf path for heatmap text
           [--labels SPEC]            # custom names: "A,B,C" or @file (sparse-merge)
           [--out PATH]               # stdout / window if omitted, where applicable
           [--ephemeris PATH.bsp]     # override the bundled-kernel download

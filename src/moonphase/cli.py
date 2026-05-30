@@ -125,7 +125,7 @@ def build_parser() -> argparse.ArgumentParser:
                    help="print transition times inside heatmap day cells "
                         "(requires --transitions; --calendar gregorian only)")
     p.add_argument("--font", default=None,
-                   help="font family name, or path to a .ttf/.otf, for chart text")
+                   help="font family name, or path to a .ttf/.otf, for heatmap text")
     p.add_argument("--labels", default=None,
                    help="custom microphase names: inline comma list or @file "
                         "(one per line, or JSON index->name); sparse-merged over built-ins")
