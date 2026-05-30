@@ -10,7 +10,9 @@ from datetime import datetime, timedelta, timezone
 from . import renderers
 from .calendar import build_series
 from .ephemeris import PhaseEphemeris
+from .events import build_events
 from .microphase import MicrophaseScheme
+from .report import Report
 
 
 def resolve_mode(fmt, requested, modes_for):
@@ -75,6 +77,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     p.add_argument("--sample", type=_parse_sample, default=timedelta(hours=1),
                    help="sampling cadence (default: 1h)")
+    p.add_argument("--mode", choices=["series", "events"], default=None,
+                   help="output mode; auto-resolved from --format when omitted")
+    p.add_argument("--transitions", action="store_true",
+                   help="include transition points (overlays in series; rows in events)")
     p.add_argument("--format", default="chart", choices=renderers.available(),
                    help="output renderer")
     p.add_argument("--out", default=None,
@@ -91,10 +97,27 @@ def main(argv: list[str] | None = None) -> int:
               if args.divisions is not None
               else MicrophaseScheme.from_step(args.step))
 
+    try:
+        mode = resolve_mode(args.format, args.mode, renderers.modes_for)
+    except ValueError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 2
+
     eph = PhaseEphemeris(kernel_path=args.ephemeris)
-    samples = build_series(args.start, args.end, scheme,
-                           sample_step=args.sample, ephemeris=eph)
-    renderers.get(args.format)(samples, scheme, args.out)
+
+    if mode == "events":
+        events = build_events(args.start, args.end, scheme, eph,
+                              transitions=args.transitions)
+        report = Report(scheme=scheme, mode="events", events=events)
+    else:
+        samples = build_series(args.start, args.end, scheme,
+                               sample_step=args.sample, ephemeris=eph)
+        # series-mode events: phase centers always, transitions when requested
+        events = build_events(args.start, args.end, scheme, eph,
+                              transitions=args.transitions)
+        report = Report(scheme=scheme, mode="series", samples=samples, events=events)
+
+    renderers.get(args.format)(report, args.out)
     return 0
 
 
