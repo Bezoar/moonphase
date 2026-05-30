@@ -2,7 +2,8 @@ from datetime import datetime, timedelta, timezone
 
 from moonphase.calendar import PhaseSample
 from moonphase.displaytz import DisplayZone
-from moonphase.heatmap_layout import day_cells, principal_phase_days, lunations
+from moonphase.events import PhaseEvent
+from moonphase.heatmap_layout import day_cells, principal_phase_days, lunations, transitions_by_day
 
 UTC = DisplayZone.utc()
 T0 = datetime(2026, 1, 1, tzinfo=timezone.utc)
@@ -50,3 +51,28 @@ def test_lunations_new_anchor_segments_a_cycle():
 def test_lunations_full_anchor_uses_180_crossings():
     segs = lunations(_series(70), UTC, "full")
     assert segs and 28 <= segs[0]["days"] <= 31
+
+
+def test_transitions_by_day_skips_centers_sorts_and_enters_next_index():
+    evs = [
+        PhaseEvent(when=datetime(2026, 1, 1, 18, tzinfo=timezone.utc),
+                   angle_deg=22.5, kind="transition", index=0, name=None),
+        PhaseEvent(when=datetime(2026, 1, 1, 6, tzinfo=timezone.utc),
+                   angle_deg=11.25, kind="transition", index=7, name=None),
+        PhaseEvent(when=datetime(2026, 1, 2, 3, tzinfo=timezone.utc),
+                   angle_deg=0.0, kind="center", index=0, name="New"),
+    ]
+    m = transitions_by_day(evs, UTC, 8)
+    assert list(m) == ["2026-01-01"]                       # center is skipped
+    assert [t.hour for _, t in m["2026-01-01"]] == [6, 18]  # time-sorted
+    # entered index = (event.index + 1) % divisions, in time order
+    assert [idx for idx, _ in m["2026-01-01"]] == [0, 1]
+
+
+def test_transitions_by_day_uses_display_tz_day():
+    z = DisplayZone("fixed", timedelta(hours=-8))
+    # 2026-01-02 03:00 UTC == 2026-01-01 19:00 local -> previous local day
+    evs = [PhaseEvent(when=datetime(2026, 1, 2, 3, tzinfo=timezone.utc),
+                      angle_deg=11.25, kind="transition", index=0, name=None)]
+    m = transitions_by_day(evs, z, 8)
+    assert list(m) == ["2026-01-01"]
