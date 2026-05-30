@@ -88,6 +88,24 @@ moonphase --start 2026-01-01T00:00Z --end 2026-12-31T23:00Z \
           --out samples/heatmap-gregorian-index-2026-16div.png
 ```
 
+### Giant heatmap with in-cell transition times — `--cell-times`
+
+With `--cell-times` (gregorian + `--transitions`), each day cell prints the
+time(s) a microphase transition took effect, in low-contrast text — `code @ HH:MM`,
+where `code` is the `--labels` value (here terse codes from
+[`labels-8-short.txt`](labels-8-short.txt)) or the bare microphase number. The
+figure is auto-sized from the labels so 9 pt text stays legible, which makes it
+large — **tap the image to open it full-size in a new tab**.
+
+[![Giant cell-times heatmap, 8 divisions, 2026 Q1](heatmap-cell-times-2026-q1-8div.png)](heatmap-cell-times-2026-q1-8div.png)
+
+```bash
+moonphase --start 2026-01-01T00:00Z --end 2026-03-31T23:00Z --divisions 8 \
+          --transitions --format heatmap --calendar gregorian --cell-times \
+          --labels @samples/labels-8-short.txt \
+          --out samples/heatmap-cell-times-2026-q1-8div.png
+```
+
 ---
 
 ## Calendar heatmap — Lunar months
