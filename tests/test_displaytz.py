@@ -74,6 +74,18 @@ def test_caption_local_notes_dst_change():
         assert "DST changes within range" in spanning
 
 
+def test_caption_local_dst_change_with_same_endpoints():
+    # A full year starts and ends in PST but is PDT in the middle: the caption
+    # must still flag the change, not just compare the two endpoints.
+    with _tz("America/Los_Angeles"):
+        z = DisplayZone("local")
+        jan = datetime(2026, 1, 1, tzinfo=timezone.utc)
+        dec = datetime(2026, 12, 31, tzinfo=timezone.utc)
+        cap = z.caption(jan, dec)
+        assert "DST changes within range" in cap
+        assert "PST" in cap and "PDT" in cap
+
+
 def test_utc_roundtrip_and_caption():
     z = DisplayZone.utc()
     dt = datetime(2026, 5, 1, 12, tzinfo=timezone.utc)

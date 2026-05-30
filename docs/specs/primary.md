@@ -93,7 +93,7 @@ next decade", "the exact UTC instant of every full moon").
 - **F3b.3** The discrete-scan step (`find_discrete` `step_days`) must be smaller than the minimum
   target spacing (Moon advances ~12.2°/day); runtime grows with N. This is documented.
 
-### 5.4 Time handling
+### 5.4 Time handling *(implemented in Phase 2)*
 - **F4t.1** A single **display timezone** is resolved per run, in priority order: (1) explicit
   offset on `--start` (full ISO 8601), (2) discernible system-local timezone, (3) UTC.
 - **F4t.2** Bare dates / naive datetimes are interpreted in the display timezone (→ local midnight
