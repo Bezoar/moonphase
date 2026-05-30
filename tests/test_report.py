@@ -1,5 +1,4 @@
-from datetime import timezone
-
+from moonphase.displaytz import DisplayZone
 from moonphase.microphase import MicrophaseScheme
 from moonphase.report import Report
 
@@ -9,7 +8,7 @@ def test_report_defaults():
     r = Report(scheme=s, mode="series", samples=[])
     assert r.mode == "series"
     assert r.events is None
-    assert r.tz == timezone.utc      # default until Phase 2
+    assert isinstance(r.tz, DisplayZone) and r.tz.kind == "utc"  # default until set by CLI
     assert r.labels is None          # default until Phase 4
 
 
