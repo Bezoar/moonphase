@@ -6,7 +6,7 @@ from __future__ import annotations
 from contextlib import nullcontext
 from datetime import date
 
-from ..heatmap_layout import day_cells, lunations, principal_phase_days, transitions_by_day
+from ..heatmap_layout import cell_events_by_day, day_cells, lunations, principal_phase_days
 from ..moondisk import illuminated_fraction, lit_polygon
 from ..theme import theme_of
 from . import register
@@ -89,16 +89,16 @@ def _measure_line_inches(plt, text, family):
 
 
 def _giant_figsize(plt, day_trans, label_of, n_rows, has_legend, family):
-    """Figure size (inches) that fits the widest 'label @ HH:MM' line and the
+    """Figure size (inches) that fits the widest 'label HH:MM' line and the
     tallest stacked cell at the 9 pt floor."""
     lines, max_rows = [], 1
     for crossings in day_trans.values():
         max_rows = max(max_rows, min(len(crossings), _STACK_CAP))
-        for idx, local in crossings:
-            lines.append(f"{label_of(idx)} @ {local.strftime('%H:%M')}")
-    # char-count proxy for pixel width; fine for short "label @ HH:MM" strings —
-    # the true extent of this pick is then measured by _measure_line_inches.
-    longest = max(lines, key=len) if lines else "0 @ 00:00"
+        for is_t, idx, local in crossings:
+            lines.append(_cell_line(is_t, label_of(idx), local.strftime("%H:%M")))
+    # char-count proxy for pixel width; the arrow-prefixed transition lines are the
+    # widest case. The true extent of this pick is measured by _measure_line_inches.
+    longest = max(lines, key=len) if lines else "→0 00:00"
     w_in, h_in = _measure_line_inches(plt, longest, family)
     cell_w = w_in + 0.12                        # horizontal padding (inches)
     text_h = max_rows * (h_in * 1.30) + 0.06    # 1.30x line spacing + baseline pad
@@ -161,9 +161,16 @@ def _draw_marker(ax, cx, cy, rr, principal_index, theme):
     ax.add_patch(Circle((cx, cy), rr, fill=False, edgecolor=theme.moon_ring, lw=0.8, zorder=7))
 
 
+def _cell_line(is_transition, label, hhmm):
+    """One cell-times line: '→label HH:MM' for a transition *into* a phase,
+    or bare 'label HH:MM' for a phase peak (center)."""
+    return f"{'→' if is_transition else ''}{label} {hhmm}"
+
+
 def _draw_cell_times(ax, x0, row, crossings, cell, scheme, tint, label_of):
-    """Draw a day's transition times inside its cell as low-contrast text,
-    collapsing to a 'N×' badge past the stack cap."""
+    """Draw a day's phase-peak and transition times inside its cell as low-contrast
+    text — transitions arrow-prefixed (entering a phase), peaks bare — collapsing to
+    an 'N×' badge past the stack cap."""
     a, i = cell
     color = damped_text_color(_tint(a, i, scheme, tint))
     cx, cy = x0 + 0.47, row + 0.47
@@ -171,8 +178,8 @@ def _draw_cell_times(ax, x0, row, crossings, cell, scheme, tint, label_of):
         ax.text(cx, cy, f"{len(crossings)}×", ha="center", va="center",
                 fontsize=9, color=color, zorder=8)
         return
-    text = "\n".join(f"{label_of(idx)} @ {local.strftime('%H:%M')}"
-                     for idx, local in crossings)
+    text = "\n".join(_cell_line(is_t, label_of(idx), local.strftime("%H:%M"))
+                     for is_t, idx, local in crossings)
     ax.text(cx, cy, text, ha="center", va="center", fontsize=9, color=color,
             zorder=8)
 
@@ -228,7 +235,7 @@ def _render_gregorian(plt, report, samples, tint, caption, theme, out):
     nrows = len(months)
 
     family = _resolve_font(font)
-    day_trans = (transitions_by_day(report.events, report.tz, scheme.divisions)
+    day_trans = (cell_events_by_day(report.events, report.tz, scheme.divisions)
                  if cell_times else {})
     label_of = _label_of(report)
     figsize = _resolve_figsize(plt, size, cell_times, day_trans, label_of,
@@ -258,7 +265,7 @@ def _render_gregorian(plt, report, samples, tint, caption, theme, out):
                                  facecolor=_tint(a, i, scheme, tint),
                                  edgecolor="none"))
                     # In cell-times mode the principal phases show as plain
-                    # "label @ HH:MM" text like any other transition, so the
+                    # "label HH:MM" text like any other phase, so the
                     # moon-disk markers are suppressed.
                     if key in marks and not cell_times:
                         _draw_marker(ax, dd - 0.53, row + 0.47, 0.30,

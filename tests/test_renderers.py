@@ -269,6 +269,31 @@ def _giant_transitions():
     ]
 
 
+def _giant_centers():
+    from datetime import timedelta
+    return [
+        PhaseEvent(when=T0 + timedelta(days=3, hours=5), angle_deg=0.0,
+                   kind="center", index=0, name="New"),
+        PhaseEvent(when=T0 + timedelta(days=10, hours=12), angle_deg=90.0,
+                   kind="center", index=2, name="1Q"),
+    ]
+
+
+def test_heatmap_cell_times_peaks_only_writes_png(tmp_path):
+    r = _heatmap_report(
+        options={"tint": "index", "calendar": "gregorian", "cell_times": True},
+        events=_giant_centers())
+    out = tmp_path / "peaks.png"
+    renderers.get("heatmap")(r, str(out))
+    assert out.exists() and out.stat().st_size > 0
+
+
+def test_cell_line_format():
+    from moonphase.renderers.heatmap import _cell_line
+    assert _cell_line(True, "Full", "14:25") == "→Full 14:25"
+    assert _cell_line(False, "Full", "21:23") == "Full 21:23"
+
+
 def test_heatmap_cell_times_writes_png(tmp_path):
     r = _heatmap_report(
         options={"tint": "illumination", "calendar": "gregorian",
