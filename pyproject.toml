@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -8,15 +8,22 @@ version = "0.1.0"
 description = "Compute and chart arbitrary microphase divisions of the lunar synodic cycle."
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "MIT" }
-authors = [{ name = "moonphase contributors" }]
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Mark Welch", email = "mw.python@proton.me" }]
 keywords = ["moon", "lunar", "phase", "ephemeris", "astronomy", "calendar"]
 classifiers = [
     "Development Status :: 3 - Alpha",
+    "Environment :: Console",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Scientific/Engineering :: Astronomy",
+    "Topic :: Scientific/Engineering :: Visualization",
 ]
 dependencies = [
     "skyfield>=1.46",
@@ -26,6 +33,11 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=7", "ruff>=0.5"]
+
+[project.urls]
+Homepage = "https://github.com/Bezoar/moonphase"
+Repository = "https://github.com/Bezoar/moonphase"
+Issues = "https://github.com/Bezoar/moonphase/issues"
 
 [project.scripts]
 moonphase = "moonphase.cli:main"
