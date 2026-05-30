@@ -52,4 +52,4 @@ def available(mode: str | None = None) -> list[str]:
 
 
 # Import side-effect: register built-in renderers.
-from . import chart, data, terminal  # noqa: E402,F401
+from . import chart, data, terminal, almanac  # noqa: E402,F401

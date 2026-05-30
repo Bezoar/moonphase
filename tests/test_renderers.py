@@ -139,3 +139,30 @@ def test_terminal_series_groups_by_display_tz_day(tmp_path):
     out = tmp_path / "tzday.txt"
     renderers.get("terminal")(r, str(out))
     assert "2026-01-01" in out.read_text()  # grouped under local day, not 01-02
+
+
+def _almanac_report():
+    evs = []
+    names = ["New", "First Quarter", "Full", "Last Quarter"]
+    for k, (ang, nm) in enumerate(zip((0, 90, 180, 270), names)):
+        evs.append(PhaseEvent(when=T0 + timedelta(days=7.4 * k), angle_deg=float(ang),
+                              kind="center", index=k, name=nm))
+    return Report(scheme=S4, mode="events", events=evs)
+
+
+def test_almanac_registered_events_only():
+    assert "almanac" in renderers.available("events")
+    assert "almanac" not in renderers.available("series")
+
+
+def test_almanac_writes_png(tmp_path):
+    out = tmp_path / "a.png"
+    renderers.get("almanac")(_almanac_report(), str(out))
+    assert out.exists() and out.stat().st_size > 0
+
+
+def test_almanac_empty_events_raises(tmp_path):
+    r = Report(scheme=S4, mode="events", events=[])
+    import pytest
+    with pytest.raises(ValueError):
+        renderers.get("almanac")(r, str(tmp_path / "x.png"))
