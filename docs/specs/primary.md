@@ -165,7 +165,8 @@ next decade", "the exact UTC instant of every full moon").
 - **N1** Python ≥ 3.10, pure-Python source.
 - **N2** Hard deps: `skyfield`, `numpy`, `matplotlib`. No optional groups beyond `dev`.
 - **N3** Cold-import time (no kernel load) under 500 ms — Skyfield/matplotlib stay lazily imported.
-- **N4** Repository under 1 MB excluding the ephemeris kernel.
+- **N4** Repository under 10 MB excluding the ephemeris kernel (raised from 1 MB to allow a
+  committed `samples/` gallery of rendered charts).
 - **N5** MIT-licensed; permissive, no copyleft obligations on downstream users.
 - **N6** Determinism: identical invocations on the same kernel produce byte-identical output
   **when a timezone is pinned** (explicit `--start` offset / UTC). With local-tz resolution,
