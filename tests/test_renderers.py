@@ -168,7 +168,7 @@ def test_almanac_empty_events_raises(tmp_path):
         renderers.get("almanac")(r, str(tmp_path / "x.png"))
 
 
-def _heatmap_report(days=70, options=None):
+def _heatmap_report(days=70, options=None, events=None):
     from datetime import timedelta
     samples = []
     for i in range(days * 24):
@@ -177,7 +177,7 @@ def _heatmap_report(days=70, options=None):
         samples.append(PhaseSample(when=when, angle_deg=ang,
                                    microphase=int(ang / 22.5 + 0.5) % 16))
     return Report(scheme=MicrophaseScheme.from_divisions(16), mode="series",
-                  samples=samples, options=options)
+                  samples=samples, options=options, events=events)
 
 
 def test_heatmap_registered_series_only():
@@ -255,3 +255,42 @@ def test_almanac_renders_both_themes(tmp_path):
         out = tmp_path / f"a-{theme}.png"
         renderers.get("almanac")(r, str(out))
         assert out.exists() and out.stat().st_size > 0
+
+
+def _giant_transitions():
+    from datetime import timedelta
+    return [
+        PhaseEvent(when=T0 + timedelta(days=2, hours=4), angle_deg=11.25,
+                   kind="transition", index=0, name=None),
+        PhaseEvent(when=T0 + timedelta(days=2, hours=20), angle_deg=33.75,
+                   kind="transition", index=1, name=None),
+        PhaseEvent(when=T0 + timedelta(days=6, hours=9), angle_deg=56.25,
+                   kind="transition", index=2, name=None),
+    ]
+
+
+def test_heatmap_cell_times_writes_png(tmp_path):
+    r = _heatmap_report(
+        options={"tint": "illumination", "calendar": "gregorian",
+                 "cell_times": True},
+        events=_giant_transitions())
+    out = tmp_path / "giant.png"
+    renderers.get("heatmap")(r, str(out))
+    assert out.exists() and out.stat().st_size > 0
+
+
+def test_heatmap_cell_times_too_small_size_raises(tmp_path):
+    r = _heatmap_report(
+        options={"tint": "illumination", "calendar": "gregorian",
+                 "cell_times": True, "size": (200, 200)},
+        events=_giant_transitions())
+    with pytest.raises(ValueError):
+        renderers.get("heatmap")(r, str(tmp_path / "x.png"))
+
+
+def test_heatmap_size_override_writes_png(tmp_path):
+    r = _heatmap_report(options={"tint": "illumination", "calendar": "gregorian",
+                                 "size": (1600, 1200)})
+    out = tmp_path / "sz.png"
+    renderers.get("heatmap")(r, str(out))
+    assert out.exists() and out.stat().st_size > 0
