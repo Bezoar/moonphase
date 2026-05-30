@@ -40,15 +40,11 @@ Two ways to get data out:
 
 Requires **Python ≥ 3.10**.
 
-> **Note:** moonphase is not yet published to PyPI. The `pip install moonphase`
-> line below is a placeholder for the planned release — for now, install from
-> source.
-
 ```bash
-# From PyPI (planned — not yet available)
+# From PyPI
 pip install moonphase
 
-# From source (works today)
+# From source
 git clone https://github.com/Bezoar/moonphase.git
 cd moonphase
 python -m venv .venv && source .venv/bin/activate
