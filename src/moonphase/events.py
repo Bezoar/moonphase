@@ -33,7 +33,10 @@ class PhaseEvent:
 
 
 def _unwrap(angles: np.ndarray) -> np.ndarray:
-    """Turn a wrapped [0,360) sequence into a monotonic increasing one."""
+    """Turn a wrapped [0,360) sequence into a monotonic increasing one.
+
+    Assumes the input is monotonically non-decreasing modulo 360.
+    """
     out = np.array(angles, dtype=float)
     add = 0.0
     for i in range(1, len(out)):
@@ -54,7 +57,8 @@ def _classify(target_unwrapped: float, scheme: MicrophaseScheme):
     return target_mod, "transition", idx, None
 
 
-def build_events(start, end, scheme, ephemeris, transitions=False):
+def build_events(start: datetime, end: datetime, scheme: MicrophaseScheme,
+                 ephemeris, transitions: bool = False) -> list[PhaseEvent]:
     """Return chronological :class:`PhaseEvent`s in ``[start, end]``.
 
     With ``transitions=False`` only phase centers (multiples of ``step``).
@@ -79,6 +83,8 @@ def build_events(start, end, scheme, ephemeris, transitions=False):
         t += timedelta(days=coarse_days)
     if grid[-1] < end:
         grid.append(end)
+    if len(grid) < 2:
+        return []
 
     angles = np.asarray(ephemeris.phase_angles_deg(grid), dtype=float)
     U = _unwrap(angles)
@@ -90,6 +96,7 @@ def build_events(start, end, scheme, ephemeris, transitions=False):
         target = m * unit
         j = int(np.searchsorted(U, target)) - 1
         j = max(0, min(j, len(grid) - 2))
+        # anchor for re-wrapping bisection mid-point angles into this cycle
         lo, hi, ref = grid[j], grid[j + 1], float(U[j])
         for _ in range(_BISECT_ITERS):
             mid = lo + (hi - lo) / 2

@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
 import numpy as np
+import pytest
 
 from moonphase.microphase import MicrophaseScheme
 from moonphase.events import PhaseEvent, build_events
@@ -37,7 +38,7 @@ def test_centers_only_for_divisions_four():
     names = [e.name for e in events]
     # New(0d) FQ(7.5d) Full(15d) LQ(22.5d) New(30d)
     assert names == ["New", "First Quarter", "Full", "Last Quarter", "New"]
-    assert _days(events[1]) == 12.0 * 0 + 7.5 or abs(_days(events[1]) - 7.5) < 0.01
+    assert abs(_days(events[1]) - 7.5) < 0.01
     assert abs(_days(events[2]) - 15.0) < 0.01
     assert all(events[i].when < events[i + 1].when for i in range(len(events) - 1))
 
@@ -65,3 +66,15 @@ def test_events_are_phaseevents():
     events = build_events(START, START + timedelta(days=20), scheme, eph)
     assert events and isinstance(events[0], PhaseEvent)
     assert events[0].when.tzinfo is not None
+
+
+def test_point_interval_returns_empty():
+    eph = LinearEphemeris(START, rate_deg_per_day=12.0, phase0_deg=90.0)
+    scheme = MicrophaseScheme.from_divisions(4)
+    assert build_events(START, START, scheme, eph) == []
+
+
+def test_start_after_end_raises():
+    eph = LinearEphemeris(START)
+    with pytest.raises(ValueError):
+        build_events(START + timedelta(days=1), START, MicrophaseScheme.from_divisions(4), eph)
