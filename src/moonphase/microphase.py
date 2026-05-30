@@ -37,9 +37,11 @@ class MicrophaseScheme:
 
 
 def phase_to_index(phase_deg: float, scheme: MicrophaseScheme) -> int:
-    """Map a phase angle in [0, 360) to its microphase bucket index."""
+    """Map a phase angle to its microphase index.
+
+    Microphases are *centered* on ``k * step_deg``; an angle maps to the
+    nearest center via round-half-up, so exact transition boundaries
+    ``(k+0.5)*step`` assign deterministically to the higher-index arc.
+    """
     a = phase_deg % 360.0
-    idx = int(a // scheme.step_deg)
-    if idx >= scheme.divisions:
-        idx = scheme.divisions - 1
-    return idx
+    return int(a / scheme.step_deg + 0.5) % scheme.divisions
