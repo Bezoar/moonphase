@@ -211,3 +211,21 @@ def test_heatmap_empty_samples_raises(tmp_path):
     r = Report(scheme=MicrophaseScheme.from_divisions(16), mode="series", samples=[])
     with pytest.raises(ValueError):
         renderers.get("heatmap")(r, str(tmp_path / "x.png"))
+
+
+def test_csv_events_use_custom_label(tmp_path):
+    evs = [PhaseEvent(when=T0, angle_deg=0.0, kind="center", index=0, name="Dark")]
+    r = Report(scheme=S4, mode="events", events=evs)
+    out = tmp_path / "e.csv"
+    renderers.get("csv")(r, str(out))
+    assert "Dark" in out.read_text()
+
+
+def test_chart_uses_report_labels(tmp_path):
+    samples = [PhaseSample(when=T0, angle_deg=0.0, microphase=0),
+               PhaseSample(when=T0.replace(hour=12), angle_deg=6.0, microphase=0)]
+    r = Report(scheme=S4, mode="series", samples=samples,
+               labels=["Dark", "Waxing", "Bright", "Waning"])
+    out = tmp_path / "c.png"
+    renderers.get("chart")(r, str(out))            # smoke: renders with custom axis
+    assert out.exists() and out.stat().st_size > 0

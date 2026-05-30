@@ -56,8 +56,11 @@ def render(report, out):
         ax.set_ylabel("Sun–Moon elongation (°)")
         axL = ax.secondary_yaxis("left")
         axL.set_yticks([(k * step) % 360 for k in range(s.divisions)])
-        axL.set_yticklabels([default_name(k, s) or f"{(k * step) % 360:.0f}°"
-                             for k in range(s.divisions)])
+        labels = report.labels
+        axL.set_yticklabels([
+            (labels[k] if labels else default_name(k, s)) or f"{(k * step) % 360:.0f}°"
+            for k in range(s.divisions)
+        ])
 
         start_utc, end_utc = report.span()
         caption = report.tz.caption(start_utc, end_utc)
