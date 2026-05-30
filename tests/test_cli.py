@@ -126,11 +126,22 @@ def test_main_passes_options_to_report(monkeypatch):
     monkeypatch.setattr(cli_mod.renderers, "get", lambda name: fake_render)
     rc = cli_mod.main([
         "--start", "2026-01-01", "--end", "2026-01-10", "--divisions", "8",
-        "--format", "json", "--tint", "index", "--calendar", "lunar",
+        "--format", "json", "--theme", "light", "--tint", "index", "--calendar", "lunar",
         "--lunar-anchor", "full",
     ])
     assert rc == 0
-    assert captured["opts"] == {"tint": "index", "calendar": "lunar", "lunar_anchor": "full"}
+    assert captured["opts"] == {"theme": "light", "tint": "index", "calendar": "lunar",
+                                "lunar_anchor": "full"}
+
+
+def test_main_theme_defaults_to_dark(monkeypatch):
+    captured = {}
+    monkeypatch.setattr(cli_mod, "PhaseEphemeris", _LinearEph)
+    monkeypatch.setattr(cli_mod.renderers, "get", lambda name: lambda r, o: captured.update(t=r.options["theme"]))
+    rc = cli_mod.main([
+        "--start", "2026-01-01", "--end", "2026-01-10", "--divisions", "8", "--format", "json",
+    ])
+    assert rc == 0 and captured["t"] == "dark"
 
 
 def test_main_renderer_value_error_is_clean(tmp_path, monkeypatch, capsys):

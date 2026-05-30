@@ -96,6 +96,8 @@ def build_parser() -> argparse.ArgumentParser:
                    help="output mode; auto-resolved from --format when omitted")
     p.add_argument("--transitions", action="store_true",
                    help="include transition points (overlays in series; rows in events)")
+    p.add_argument("--theme", choices=["dark", "light"], default="dark",
+                   help="color theme for rendered charts (default: dark)")
     p.add_argument("--tint", choices=["illumination", "index"], default="illumination",
                    help="heatmap cell tint (heatmap only)")
     p.add_argument("--calendar", choices=["gregorian", "lunar"], default="gregorian",
@@ -132,7 +134,7 @@ def main(argv: list[str] | None = None) -> int:
     start_utc = zone.to_utc(args.start)
     end_utc = zone.to_utc(args.end)
 
-    options = {"tint": args.tint, "calendar": args.calendar,
+    options = {"theme": args.theme, "tint": args.tint, "calendar": args.calendar,
                "lunar_anchor": args.lunar_anchor}
 
     eph = PhaseEphemeris(kernel_path=args.ephemeris)
