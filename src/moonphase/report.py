@@ -20,6 +20,7 @@ class Report:
     events: list[PhaseEvent] | None = None      # exact events (overlay or primary)
     tz: DisplayZone = _UTC                      # display timezone (UTC by default)
     labels: list[str] | None = None            # custom names; None until Phase 4
+    options: dict | None = None                # renderer-specific flags (tint/calendar/...)
 
     def span(self):
         """First and last instant (chronological), or (None, None) if empty."""

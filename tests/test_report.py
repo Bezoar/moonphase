@@ -10,6 +10,7 @@ def test_report_defaults():
     assert r.events is None
     assert isinstance(r.tz, DisplayZone) and r.tz.kind == "utc"  # default until set by CLI
     assert r.labels is None          # default until Phase 4
+    assert r.options is None
 
 
 def test_report_is_frozen():

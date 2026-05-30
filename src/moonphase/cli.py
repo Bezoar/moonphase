@@ -84,6 +84,12 @@ def build_parser() -> argparse.ArgumentParser:
                    help="output mode; auto-resolved from --format when omitted")
     p.add_argument("--transitions", action="store_true",
                    help="include transition points (overlays in series; rows in events)")
+    p.add_argument("--tint", choices=["illumination", "index"], default="illumination",
+                   help="heatmap cell tint (heatmap only)")
+    p.add_argument("--calendar", choices=["gregorian", "lunar"], default="gregorian",
+                   help="heatmap/terminal layout: civil months or lunar months")
+    p.add_argument("--lunar-anchor", choices=["new", "full"], default="new",
+                   help="lunar-month boundary (with --calendar lunar)")
     p.add_argument("--format", default="chart", choices=renderers.available(),
                    help="output renderer")
     p.add_argument("--out", default=None,
@@ -110,20 +116,24 @@ def main(argv: list[str] | None = None) -> int:
     start_utc = zone.to_utc(args.start)
     end_utc = zone.to_utc(args.end)
 
+    options = {"tint": args.tint, "calendar": args.calendar,
+               "lunar_anchor": args.lunar_anchor}
+
     eph = PhaseEphemeris(kernel_path=args.ephemeris)
 
     if mode == "events":
         # --sample does not apply in events mode (events are root-found, not sampled)
         events = build_events(start_utc, end_utc, scheme, eph,
                               transitions=args.transitions)
-        report = Report(scheme=scheme, mode="events", events=events, tz=zone)
+        report = Report(scheme=scheme, mode="events", events=events, tz=zone,
+                        options=options)
     else:
         samples = build_series(start_utc, end_utc, scheme,
                                sample_step=args.sample, ephemeris=eph)
         events = build_events(start_utc, end_utc, scheme, eph,
                               transitions=args.transitions)
         report = Report(scheme=scheme, mode="series", samples=samples,
-                        events=events, tz=zone)
+                        events=events, tz=zone, options=options)
 
     renderers.get(args.format)(report, args.out)
     return 0

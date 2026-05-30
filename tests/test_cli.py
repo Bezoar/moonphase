@@ -114,3 +114,20 @@ def test_main_bare_date_uses_local(tmp_path, monkeypatch):
         payload = json.loads(out.read_text())
         assert "local time" in payload["timezone"]
         assert payload["events"][0]["time"].endswith("-08:00")  # Jan -> PST
+
+
+def test_main_passes_options_to_report(monkeypatch):
+    captured = {}
+
+    def fake_render(report, out):
+        captured["opts"] = report.options
+
+    monkeypatch.setattr(cli_mod, "PhaseEphemeris", _LinearEph)
+    monkeypatch.setattr(cli_mod.renderers, "get", lambda name: fake_render)
+    rc = cli_mod.main([
+        "--start", "2026-01-01", "--end", "2026-01-10", "--divisions", "8",
+        "--format", "json", "--tint", "index", "--calendar", "lunar",
+        "--lunar-anchor", "full",
+    ])
+    assert rc == 0
+    assert captured["opts"] == {"tint": "index", "calendar": "lunar", "lunar_anchor": "full"}
