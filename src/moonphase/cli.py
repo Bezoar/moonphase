@@ -7,11 +7,14 @@ import re
 import sys
 from datetime import datetime, timedelta
 
+from dataclasses import replace
+
 from . import renderers
 from .calendar import build_series
 from .displaytz import DisplayZone
 from .ephemeris import PhaseEphemeris
 from .events import build_events
+from .labels import resolve_labels
 from .microphase import MicrophaseScheme
 from .report import Report
 
@@ -34,6 +37,15 @@ def resolve_mode(fmt, requested, modes_for):
             f"format {fmt!r} supports mode(s): {', '.join(sorted(supported))}"
         )
     return requested
+
+
+def _label_events(events, labels):
+    """Override phase-center event names from resolved labels (transitions keep
+    their None name)."""
+    if not labels:
+        return events
+    return [replace(e, name=labels[e.index]) if e.kind == "center" else e
+            for e in events]
 
 
 _STEP_RE = re.compile(r"^\s*([0-9]*\.?[0-9]+)\s*(deg|d|°)?\s*$", re.IGNORECASE)
@@ -90,6 +102,9 @@ def build_parser() -> argparse.ArgumentParser:
                    help="heatmap layout: civil months or lunar months")
     p.add_argument("--lunar-anchor", choices=["new", "full"], default="new",
                    help="lunar-month boundary (with --calendar lunar)")
+    p.add_argument("--labels", default=None,
+                   help="custom microphase names: inline comma list or @file "
+                        "(one per line, or JSON index->name); sparse-merged over built-ins")
     p.add_argument("--format", default="chart", choices=renderers.available(),
                    help="output renderer")
     p.add_argument("--out", default=None,
@@ -108,7 +123,8 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         mode = resolve_mode(args.format, args.mode, renderers.modes_for)
-    except ValueError as e:
+        labels = resolve_labels(args.labels, scheme)
+    except (ValueError, KeyError) as e:
         print(f"error: {e}", file=sys.stderr)
         return 2
 
@@ -125,15 +141,17 @@ def main(argv: list[str] | None = None) -> int:
         # --sample does not apply in events mode (events are root-found, not sampled)
         events = build_events(start_utc, end_utc, scheme, eph,
                               transitions=args.transitions)
+        events = _label_events(events, labels)
         report = Report(scheme=scheme, mode="events", events=events, tz=zone,
-                        options=options)
+                        options=options, labels=labels)
     else:
         samples = build_series(start_utc, end_utc, scheme,
                                sample_step=args.sample, ephemeris=eph)
         events = build_events(start_utc, end_utc, scheme, eph,
                               transitions=args.transitions)
+        events = _label_events(events, labels)
         report = Report(scheme=scheme, mode="series", samples=samples,
-                        events=events, tz=zone, options=options)
+                        events=events, tz=zone, options=options, labels=labels)
 
     try:
         renderers.get(args.format)(report, args.out)
