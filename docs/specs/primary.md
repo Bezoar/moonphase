@@ -1,203 +1,252 @@
-# moonphase — Preliminary Specification
+# moonphase — Specification
 
 Status: **draft**
 Owner: project author
-Last revised: 2026-05-29
+Last revised: 2026-05-29 (rev 2 — centered phases, exact events, transition points, chart designs)
+
+> Rev 2 integrates the spec-refinement design brainstormed on 2026-05-29
+> (`docs/superpowers/specs/2026-05-29-spec-refinement-design.md`). Visual reference for the
+> renderers: `docs/mockups-2026-05-29.png`.
 
 ## 1. Purpose
 
-`moonphase` is a standalone Python tool that computes **microphases** of the
-Moon — user-defined, arbitrarily fine subdivisions of the synodic cycle —
-and emits them across a date range of any length, in multiple output
-formats. It is intended for both casual calendar use ("show me 32-step
-moon phases for 2026") and analytical use ("give me 1-degree-resolution
-phase angle as CSV for the next decade").
+`moonphase` is a standalone Python tool that computes **microphases** of the Moon — user-defined,
+arbitrarily fine subdivisions of the synodic cycle — and emits them across a date range of any
+length, in multiple output formats. It serves both casual calendar use ("show me 32-step moon
+phases for 2026") and analytical use ("give me 1-degree-resolution phase angle as CSV for the
+next decade", "the exact UTC instant of every full moon").
 
 ## 2. Goals
 
-- **G1** Compute the lunar phase angle (Sun–Moon ecliptic longitude
-  difference, mod 360°) at arbitrary UTC instants with sub-arcminute
-  accuracy.
-- **G2** Partition the 360° synodic cycle into N equal microphases, where
-  N is user-specified either directly (`--divisions N`) or implicitly via
-  angular step (`--step Xdeg`).
-- **G3** Generate a time-indexed series of microphase samples across a
-  user-supplied `[start, end]` date range at a configurable cadence.
-- **G4** Emit the series through a **pluggable renderer registry** so that
-  new output formats (PDF, HTML, ICS, ...) can be added without changing
-  the calendar or CLI core.
-- **G5** Ship as an installable Python package with a `moonphase` console
-  script and a stable public API (`build_series`, `MicrophaseScheme`,
-  `PhaseEphemeris`).
-- **G6** Be runnable fully offline once the ephemeris kernel is cached.
+- **G1** Compute the lunar phase angle (Sun–Moon ecliptic longitude difference, mod 360°) at
+  arbitrary UTC instants with sub-arcminute accuracy.
+- **G2** Partition the 360° synodic cycle into N equal microphases **centered on** `k·step`,
+  where N is user-specified either directly (`--divisions N`) or via angular step (`--step Xdeg`).
+- **G3** Generate a time-indexed **series** of microphase samples across a `[start, end]` range
+  at a configurable cadence.
+- **G4** Identify **exact events** — root-found UTC instants of every phase center and (optionally)
+  transition point — to the precision of the ephemeris, independent of sampling cadence.
+- **G5** Emit series and events through a **pluggable renderer registry** so new output formats
+  (PDF, HTML, ICS, …) can be added without changing the calendar, events, or CLI core.
+- **G6** Ship as an installable package with a `moonphase` console script and a stable public API.
+- **G7** Be runnable fully offline once the ephemeris kernel is cached.
 
 ## 3. Non-goals (for v0.x)
 
-- Rise/set/transit times, eclipses, lunar libration analysis.
-- Local-time / observer-location features beyond UTC sampling.
+- Rise/set/transit times, eclipses, lunar libration, or distance/angular-size (supermoon) metrics.
+- Observer-location features; UTC + a single display timezone only.
 - GUI, web app, or interactive notebook widget.
-- Sub-second timing for occultations (not the use case).
+- Sub-second timing for occultations.
 - Phases of bodies other than the Moon.
 
 ## 4. Definitions
 
-- **Synodic cycle**: the ~29.53-day Sun→Moon→Sun cycle as seen from
-  Earth, parameterized by phase angle ∈ [0°, 360°).
-- **Phase angle**: `(λ_moon − λ_sun) mod 360°`, where λ are apparent
-  geocentric ecliptic longitudes in the ICRS-aligned ecliptic-of-date
-  frame. 0° = new moon; 90° = first quarter; 180° = full; 270° = last
-  quarter.
-- **Microphase**: one of N equal-width angular bins partitioning
-  [0°, 360°). Bin `k` covers `[k·Δ, (k+1)·Δ)` where `Δ = 360°/N`.
-- **Sample**: a tuple `(utc_time, phase_angle_deg, microphase_index)`.
-- **Series**: an ordered list of samples spanning a date range at a
-  fixed cadence.
+- **Synodic cycle**: the ~29.53-day Sun→Moon→Sun cycle as seen from Earth, parameterized by
+  phase angle ∈ [0°, 360°).
+- **Phase angle**: `(λ_moon − λ_sun) mod 360°`, apparent geocentric ecliptic longitudes in the
+  ecliptic-of-date frame. 0° = new, 90° = first quarter, 180° = full, 270° = last quarter.
+- **Microphase (phase)**: one of N equal angular arcs, **centered on** its phase center. Arc `k`
+  covers `[(k−½)·step, (k+½)·step)` where `step = 360°/N`. "Phase" and "microphase" are synonyms;
+  "microphase" emphasizes arbitrary N. For N=4 the microphases are the classical phases.
+- **Phase center**: the angle `k·step` — the exact peak instant of microphase `k` (New/Full/… for
+  N=4). The "identify as precisely as possible" targets.
+- **Transition point**: the angle `(k+½)·step` — the boundary between two adjacent microphase
+  arcs. A separately-labeled category, **not** a finer division.
+- **Sample**: a tuple `(utc_time, phase_angle_deg, microphase_index)` produced by fixed-cadence
+  sampling.
+- **Series**: an ordered list of samples spanning a date range at a fixed cadence.
+- **Event**: a root-found `(utc_time, target_angle, kind, index, name)` where `kind` ∈
+  {`center`, `transition`}.
+- **Lunation**: one synodic month, delimited by consecutive new moons (or full moons).
 
 ## 5. Functional requirements
 
 ### 5.1 Microphase scheme
 - **F1.1** `MicrophaseScheme.from_divisions(N)` accepts any integer N ≥ 1.
-- **F1.2** `MicrophaseScheme.from_step(step_deg)` accepts any float in
-  (0, 360]; non-integer divisors produce a final short bin (`divisions =
-  ceil(360/step)`).
-- **F1.3** `phase_to_index(angle, scheme)` is total over ℝ: inputs are
-  normalized via mod 360 and clamped to `[0, divisions-1]`.
+- **F1.2** `MicrophaseScheme.from_step(step_deg)` accepts any float in (0, 360]; non-integer
+  divisors produce a final short arc (`divisions = ceil(360/step)`).
+- **F1.3** `phase_to_index(angle, scheme)` maps an angle to its **centered** microphase via
+  round-half-up: `int(angle/step + 0.5) mod divisions` (angle pre-normalized to `[0,360)`).
+  `k·step` is the *center* of arc `k`; exact transition boundaries assign deterministically to the
+  higher-index arc (unlike banker's `round`). The index is a label only — full angular precision
+  lives in the sample's `angle_deg` and in events (§5.3b).
 
 ### 5.2 Ephemeris
-- **F2.1** Default kernel: JPL **DE421**, fetched by Skyfield's `Loader`
-  into `./data/` (or a path the user provides) on first use.
-- **F2.2** `--ephemeris path/to/kernel.bsp` overrides the default and is
-  the documented mechanism for bundling.
-- **F2.3** Phase angle computation uses apparent geocentric positions in
-  the ecliptic frame (Skyfield `ecliptic_frame`), not mean orbital
-  elements.
+- **F2.1** Default kernel: JPL **DE421**, fetched by Skyfield's `Loader` into `./data/` (or a
+  user path) on first use.
+- **F2.2** `--ephemeris path/to/kernel.bsp` overrides the default; documented bundling mechanism.
+- **F2.3** Phase angle uses apparent geocentric positions in Skyfield's `ecliptic_frame`.
 
 ### 5.3 Calendar series
-- **F3.1** `build_series(start, end, scheme, sample_step, ephemeris)`
-  returns a list of `PhaseSample` from `start` to `end` inclusive at
-  `sample_step` cadence.
-- **F3.2** Naive datetimes are interpreted as UTC.
-- **F3.3** Cadence default: 1 hour. Min: 1 second. Max: 1 day (soft).
-- **F3.4** Memory budget: one `(datetime, float, int)` per sample. Year
-  at 1h cadence ≈ 8,760 samples → trivial; decade at 1-min cadence ≈
-  5.2 M samples → user's problem to chunk.
+- **F3.1** `build_series(start, end, scheme, sample_step, ephemeris)` returns a list of
+  `PhaseSample` from `start` to `end` inclusive at `sample_step` cadence.
+- **F3.2** Cadence default 1 h; min 1 s; max 1 day (soft).
+- **F3.3** Memory: one `(datetime, float, int)` per sample.
 
-### 5.4 CLI
-- **F4.1** Entry point: `moonphase` (console script) and
-  `python -m moonphase.cli`.
-- **F4.2** Required flags: `--start`, `--end`, and exactly one of
-  `--divisions` / `--step`.
-- **F4.3** Optional flags: `--sample` (cadence), `--format` (renderer
-  name, default `chart`), `--out` (output path; stdout if omitted where
-  applicable), `--ephemeris` (kernel path).
-- **F4.4** `--format` choices are populated **dynamically** from the
-  renderer registry.
-- **F4.5** Exit code 0 on success; non-zero on validation or runtime
-  errors with a single-line message to stderr.
+### 5.3b Exact events
+- **F3b.1** `build_events(start, end, scheme, ephemeris, transitions=False)` returns chronological
+  `PhaseEvent`s with sub-second UTC instants, root-found via Skyfield's `almanac.find_discrete`.
+- **F3b.2** With `transitions=False`, the discrete function is `floor(angle/step)`; each change is
+  a **phase-center** crossing. With `transitions=True`, the function is `floor(angle/(step/2))`;
+  even multiples are labeled `center`, odd multiples `transition`. The half-step is an internal
+  computational device only — output never treats results as `2N` microphases.
+- **F3b.3** The discrete-scan step (`find_discrete` `step_days`) must be smaller than the minimum
+  target spacing (Moon advances ~12.2°/day); runtime grows with N. This is documented.
 
-### 5.5 Renderers
-- **F5.1** Each renderer is a callable
-  `render(samples, scheme, out) -> None`.
-- **F5.2** Registration via `@renderers.register("name")`; name
-  collisions raise.
-- **F5.3** Built-in renderers in v0.1:
-  - `chart` — matplotlib strip-chart; file format inferred from `--out`
-    extension (png, svg, pdf supported out of the box).
-  - `csv` — UTC timestamp, angle, microphase index, scheme params.
-  - `json` — `{scheme: {...}, samples: [...]}`.
-  - `terminal` — one row per day, one glyph per sample, using the 8-step
-    Unicode moon set as a gradient cycled by `index % 8`.
-- **F5.4** Adding a renderer is a single-file change: import-time
-  registration; no edits to CLI, calendar, or other renderers.
+### 5.4 Time handling
+- **F4t.1** A single **display timezone** is resolved per run, in priority order: (1) explicit
+  offset on `--start` (full ISO 8601), (2) discernible system-local timezone, (3) UTC.
+- **F4t.2** Bare dates / naive datetimes are interpreted in the display timezone (→ local midnight
+  on a normal machine, not UTC).
+- **F4t.3** All computation is in UTC/TT internally. Output timestamps are rendered in the display
+  timezone, emitted as ISO 8601 **with offset**; conversions are DST-aware per instant via
+  `datetime.astimezone()` (no extra dependency). Terminal/heatmap group by display-tz calendar
+  days.
+- **F4t.4** Every time-bearing render states its timezone explicitly (see F5.x captions).
+
+### 5.5 CLI
+- **F5.1** Entry points: `moonphase` console script and `python -m moonphase.cli`.
+- **F5.2** Required: `--start`, `--end`, and exactly one of `--divisions` / `--step`.
+- **F5.3** Optional flags:
+  - `--mode {series,events}` — auto-resolved from the format when omitted (single-mode format →
+    its mode; multi-mode format → `series`).
+  - `--transitions` — include transition points (overlay markers in series; rows in events).
+  - `--tint {illumination,index}` — **heatmap only**; default `illumination`.
+  - `--calendar {gregorian,lunar}` — **heatmap (and terminal) layout**; default `gregorian`.
+  - `--lunar-anchor {new,full}` — default `new`; only meaningful with `--calendar lunar`.
+  - `--labels SPEC` — custom microphase names: inline comma list or `@file` (one per line, or JSON
+    `index→name`), **sparse-merge** (blank/missing → built-in for N∈{4,8}, else index/angle).
+  - `--sample DUR` — cadence; **series mode only**, ignored in events mode (documented).
+  - `--format NAME` — renderer; choices populated dynamically from the registry, filtered by mode.
+  - `--out PATH` — output path; format inferred from extension where applicable.
+  - `--ephemeris PATH.bsp` — kernel override.
+- **F5.4** `--mode` given but incompatible with `--format` → single-line error listing the
+  format's compatible modes (e.g. `error: format 'almanac' supports mode(s): events`).
+- **F5.5** Exit 0 on success; non-zero on validation/runtime error with a single-line stderr msg.
+- **F5.6** Validation order: argparse (dates, exactly-one divisions/step, format registered) →
+  resolve & check mode → `start ≤ end`, `divisions ≥ 1` / `step ∈ (0,360]`, resolve labels & tz.
+
+### 5.6 Renderers
+- **F6.1** A renderer is `render(report, out) -> None` where `report` is a frozen `Report`
+  (scheme, mode, samples|None, events|None, tz, labels|None).
+- **F6.2** Registration `@register(name, modes={...})`; name collisions raise; `available(mode)`
+  filters by supported mode.
+- **F6.3** Built-in renderers:
+  - `chart` (series, events) — analytic strip-chart; elongation 0–360° on the Y axis with **named
+    phases on the left, degrees on the right**; daily ticks + weekly date labels (lunation
+    boundaries when `--calendar lunar`); centered phase bands; solid phase-center lines, dashed
+    transition lines; phase-angle sawtooth with event overlays (filled dots = centers, orange
+    rings = transitions). File format from `--out` extension (png/svg/pdf/…).
+  - `heatmap` (series) — calendar grid. `--tint illumination` (grayscale by illuminated fraction)
+    or `--tint index` (distinct hue per microphase). `--calendar gregorian` → months × days, day
+    cells marked with moon-disk glyphs on a dark backing chip at principal-phase days.
+    `--calendar lunar` → one phase-aligned strip per lunation, annotated with Gregorian start
+    (left), end (right), and mid/opposite-phase date (below center).
+  - `almanac` (events) — moon-disk ribbon at exact phase centers with name + date + time;
+    transition points dashed between (when `--transitions`). Correct lit-limb geometry with
+    degenerate-fraction handling (New empty, Full solid).
+  - `csv` (series, events) — series rows or event rows; ISO 8601 timestamps with offset (column
+    `time`); scheme params; `lunation_index` column when `--calendar lunar`.
+  - `json` (series, events) — `{scheme, timezone, samples|events: [...]}`.
+  - `terminal` (series, events) — glyph grid (one row per day, or per lunation when
+    `--calendar lunar`) or an event list; header states the timezone.
+- **F6.4** Every renderer that shows times emits a mandatory timezone caption (zone name for
+  local/DST zones, fixed offset / UTC otherwise; notes mid-range DST changes).
+- **F6.5** Adding a renderer is a single-file change: new module, `render(report, out)`,
+  `@register(name, modes=…)`, one import line in `renderers/__init__.py`.
 
 ## 6. Non-functional requirements
 
 - **N1** Python ≥ 3.10, pure-Python source.
-- **N2** Hard dependencies: `skyfield`, `numpy`, `matplotlib`. No
-  optional groups beyond `dev`.
-- **N3** Cold-import time (no kernel load) under 500 ms on a modern
-  laptop.
-- **N4** Repository remains under 1 MB excluding the ephemeris kernel.
-- **N5** AGPL-3.0-or-later licensed; downstream service operators must offer
-  source for modified network deployments.
-- **N6** Determinism: identical CLI invocations on the same kernel
-  produce byte-identical output.
+- **N2** Hard deps: `skyfield`, `numpy`, `matplotlib`. No optional groups beyond `dev`.
+- **N3** Cold-import time (no kernel load) under 500 ms — Skyfield/matplotlib stay lazily imported.
+- **N4** Repository under 1 MB excluding the ephemeris kernel.
+- **N5** MIT-licensed; permissive, no copyleft obligations on downstream users.
+- **N6** Determinism: identical invocations on the same kernel produce byte-identical output
+  **when a timezone is pinned** (explicit `--start` offset / UTC). With local-tz resolution,
+  output depends on the host timezone — documented; CI/reproducible runs should pin an offset.
 
 ## 7. Architecture
 
 ```
-              ┌────────────────────┐
-   CLI ──────▶│  argparse + flags  │
-              └─────────┬──────────┘
-                        │
-                        ▼
-              ┌────────────────────┐    ┌─────────────────────┐
-              │  build_series()    │◀──▶│   PhaseEphemeris    │
-              │  (calendar.py)     │    │   (Skyfield+DE421)  │
-              └─────────┬──────────┘    └─────────────────────┘
-                        │
-                        ▼
-              ┌────────────────────┐
-              │  MicrophaseScheme  │  (microphase.py)
-              └─────────┬──────────┘
-                        │ list[PhaseSample]
-                        ▼
-              ┌────────────────────┐
-              │  renderers.get()   │  ── chart / csv / json / terminal / ...
-              └────────────────────┘
+            ┌────────────────────┐
+   CLI ────▶│  argparse + flags  │  (mode resolution, tz resolution, labels)
+            └─────────┬──────────┘
+                      │
+          ┌───────────┴────────────┐
+          ▼                        ▼
+  ┌────────────────┐      ┌────────────────┐     ┌─────────────────────┐
+  │ build_series() │      │ build_events() │◀───▶│   PhaseEphemeris    │
+  │ (calendar.py)  │      │  (events.py)   │     │   (Skyfield+DE421)  │
+  └───────┬────────┘      └───────┬────────┘     └─────────────────────┘
+          │ samples               │ events
+          └───────────┬───────────┘
+                      ▼
+            ┌────────────────────┐
+            │   Report (frozen)  │  scheme · mode · samples? · events? · tz · labels?
+            └─────────┬──────────┘
+                      ▼
+            ┌────────────────────┐
+            │ renderers.get(fmt) │ ── chart / heatmap / almanac / csv / json / terminal / …
+            └────────────────────┘
 ```
 
-Data flow is one-way; renderers are leaves. The registry is the only
+Data flow is one-way; renderers are leaves consuming a `Report`. The registry is the only
 extensibility seam.
 
-## 8. Public API surface (frozen for v0.1)
+## 8. Public API surface
 
 ```python
 from moonphase import (
     MicrophaseScheme,    # .from_divisions / .from_step
     PhaseEphemeris,      # (kernel_path=None, data_dir="data")
-    PhaseSample,         # (when: datetime, angle_deg: float, microphase: int)
+    PhaseSample,         # (when, angle_deg, microphase)
+    PhaseEvent,          # (when, angle_deg, kind, index, name)
+    Report,              # (scheme, mode, samples, events, tz, labels)
     build_series,        # (start, end, scheme, sample_step, ephemeris) -> [PhaseSample]
-    phase_to_index,      # (phase_deg, scheme) -> int
+    build_events,        # (start, end, scheme, ephemeris, transitions=False) -> [PhaseEvent]
+    phase_to_index,      # (phase_deg, scheme) -> int   (centered, round-half-up)
 )
 from moonphase import renderers
-renderers.register("name")(fn)
-renderers.get("name")(samples, scheme, out)
-renderers.available() -> list[str]
+renderers.register("name", modes={"series", "events"})(fn)   # fn(report, out)
+renderers.get("name")(report, out)
+renderers.available(mode=None) -> list[str]
 ```
+
+The v0.1 `render(samples, scheme, out)` signature is superseded by `render(report, out)` — the one
+intentional pre-1.0 breaking change; the registry exists precisely to absorb it.
 
 ## 9. Out-of-scope but on the roadmap
 
-- `--timezone` flag so calendars chart in local civil time.
-- `--bundle-ephemeris` packaging mode that vendors `de421.bsp` into a
-  wheel.
-- ICS calendar renderer (one event per microphase transition).
-- HTML renderer with a CSS-grid month view.
-- Numpy-vectorized `phase_to_index` for million-sample series.
-- A small `bench/` harness comparing accuracy against Meeus-only and
-  PyEphem implementations.
+- Explicit `--timezone` override (implicit local resolution ships now).
+- `--transitions-only` series mode; numpy-vectorized `phase_to_index`.
+- ICS renderer (events-native), HTML month-grid renderer.
+- `--bundle-ephemeris` wheel variant; PyPI release.
+- Accuracy bench vs Meeus/PyEphem.
 
 ## 10. Risks & open questions
 
-- **R1** DE421 download size (~17 MB) is a friction point for first-run
-  UX; consider an optional `de440s.bsp` (smaller) or shipping a wheel
-  variant with the kernel embedded.
-- **R2** Matplotlib backend selection in headless environments — we
-  should ensure `Agg` is auto-selected when `DISPLAY` is unset.
-- **R3** The "non-integer divisions" branch in `from_step` produces a
-  short tail bin; should we instead refuse non-divisors and require the
-  user to round explicitly?
-- **R4** Public API freeze timing — wait until at least one external
-  consumer exercises the renderer registry before declaring 1.0.
+- **R1** DE421 download size (~17 MB) is a first-run friction point; consider a smaller kernel or
+  a wheel variant with the kernel embedded.
+- **R2** Matplotlib backend in headless environments — ensure `Agg` when `DISPLAY` is unset.
+- **R3** *(resolved)* Non-integer `--step` tail bin and edge assignment — round-half-up makes
+  binning deterministic; the short final arc for non-divisors is accepted behavior.
+- **R4** Public API freeze timing — wait for at least one external consumer of the renderer
+  registry before declaring 1.0.
+- **R5** Event-finding cost grows with N (scan step shrinks). Large N + long ranges may be slow;
+  document and revisit if it bites.
 
-## 11. Acceptance criteria for v0.1
+## 11. Acceptance criteria for v0.x
 
-- All unit tests pass on Python 3.10, 3.11, 3.12.
-- `moonphase --start 2026-01-01 --end 2026-12-31 --divisions 4 --out
-  chart.png` produces a chart whose Full Moon markers align with USNO
-  full-moon dates for 2026 within ±2 hours.
-- `moonphase --start ... --step 1deg --format csv` writes a 360-bin
-  series with monotonically increasing time and bounded angle ∈ [0,
-  360).
-- Adding a new renderer (e.g. a one-page HTML view) requires a single
-  new file in `src/moonphase/renderers/` and zero edits elsewhere.
+1. `phase_to_index` is centered: documented edge cases pass on Python 3.10/3.11/3.12, including
+   N=16 transition-boundary assignment.
+2. `--mode events --divisions 4` yields New/FQ/Full/LQ instants within ±2 h of USNO 2026 dates;
+   `--transitions` adds the four 45/135/225/315° crossings as `kind="transition"`.
+3. `--format almanac` auto-resolves to events and renders New empty / Full solid;
+   `--format almanac --mode series` errors with the compatible-mode list.
+4. A bare-date run on a non-UTC host produces local-time output with offsets and a tz caption; the
+   same run with `--start …Z` produces UTC output. Captions appear on chart/heatmap/almanac/terminal.
+5. `--labels @file` sparse-merge: named gradations appear; unnamed indices fall back.
+6. `heatmap --tint index` shows discrete hue bands; `--calendar lunar` lays out one dated,
+   phase-aligned strip per lunation.
+7. Adding a renderer requires a single new file plus one import; no edits to CLI/calendar/events.

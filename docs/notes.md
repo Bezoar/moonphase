@@ -279,10 +279,12 @@ Not yet verified end-to-end:
 - *Why isn't there a `Makefile`?*
   Two commands (`pip install -e ".[dev]"` and `pytest`); a Makefile would
   be ceremony for no gain.
-- *Why AGPL-3.0-or-later?*
-  Chosen by the project owner at repo-init time. Network copyleft means
-  anyone running a modified `moonphase` as a hosted service must offer
-  the modified source to its users. If you want a more permissive
-  license for embedding, ask upstream before vendoring.
+- *Why MIT?*
+  Permissive license chosen by the project owner. All dependencies
+  (Skyfield, numpy, matplotlib and their transitive deps) are permissive
+  (MIT/BSD/Apache; certifi is file-scoped MPL-2.0), and the JPL DE421
+  ephemeris is freely usable under NAIF's terms — nothing in the stack
+  forces copyleft. (The project was briefly AGPL-3.0 during scaffolding;
+  relicensed to MIT once the dependency licenses were confirmed clean.)
 - *Why no CI yet?*
   Scaffold-only; CI lands when there's a remote to run it against.
