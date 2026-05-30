@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "moonphase"
-version = "1.0.0"
+version = "1.0.1"
 description = "Compute and chart arbitrary microphase divisions of the lunar synodic cycle."
 readme = "README.md"
 requires-python = ">=3.10"
