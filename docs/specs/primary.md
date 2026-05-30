@@ -127,6 +127,10 @@ next decade", "the exact UTC instant of every full moon").
   resolve & check mode → `start ≤ end`, `divisions ≥ 1` / `step ∈ (0,360]`, resolve labels & tz.
 
 ### 5.6 Renderers
+> `chart`/`csv`/`json`/`terminal` shipped in Phase 1; `heatmap`, `almanac`, `--tint`, and
+> `--calendar`/`--lunar-anchor` implemented in Phase 3 (renderer-specific flags travel on
+> `Report.options`).
+
 - **F6.1** A renderer is `render(report, out) -> None` where `report` is a frozen `Report`
   (scheme, mode, samples|None, events|None, tz, labels|None).
 - **F6.2** Registration `@register(name, modes={...})`; name collisions raise; `available(mode)`
