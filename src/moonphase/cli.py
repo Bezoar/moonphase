@@ -122,8 +122,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--size", type=_parse_size, default=None,
                    help="output image size in pixels, WIDTHxHEIGHT (e.g. 5000x3000)")
     p.add_argument("--cell-times", action="store_true",
-                   help="print transition times inside heatmap day cells "
-                        "(requires --transitions; --calendar gregorian only)")
+                   help="print phase-peak times inside heatmap day cells; with "
+                        "--transitions, also the transition-into-phase times "
+                        "(--calendar gregorian only)")
     p.add_argument("--font", default=None,
                    help="font family name, or path to a .ttf/.otf, for heatmap text")
     p.add_argument("--labels", default=None,
@@ -145,8 +146,6 @@ def main(argv: list[str] | None = None) -> int:
         problem = None
         if args.format != "heatmap":
             problem = "--cell-times applies only to --format heatmap"
-        elif not args.transitions:
-            problem = "--cell-times requires --transitions"
         elif args.calendar != "gregorian":
             problem = "--cell-times requires --calendar gregorian"
         if problem:
