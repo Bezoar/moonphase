@@ -196,3 +196,16 @@ def test_main_labels_malformed_json_is_clean_error(tmp_path, monkeypatch, capsys
     ])
     assert rc == 2
     assert "error:" in capsys.readouterr().err
+
+
+def test_parse_size_ok():
+    assert cli_mod._parse_size("5000x3000") == (5000, 3000)
+    assert cli_mod._parse_size(" 800X600 ") == (800, 600)
+
+
+def test_parse_size_bad():
+    import argparse
+    with pytest.raises(argparse.ArgumentTypeError):
+        cli_mod._parse_size("wide")
+    with pytest.raises(argparse.ArgumentTypeError):
+        cli_mod._parse_size("0x100")
