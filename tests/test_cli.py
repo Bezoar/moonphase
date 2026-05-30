@@ -212,16 +212,18 @@ def test_parse_size_bad():
         cli_mod._parse_size("0x100")
 
 
-def test_cell_times_requires_transitions(monkeypatch, tmp_path):
+def test_cell_times_requires_transitions(monkeypatch, tmp_path, capsys):
     monkeypatch.setattr(cli_mod, "PhaseEphemeris", _LinearEph)
     rc = cli_mod.main([
         "--start", "2026-01-01", "--end", "2026-01-31", "--divisions", "8",
         "--format", "heatmap", "--cell-times", "--out", str(tmp_path / "h.png"),
     ])
     assert rc == 2
+    err = capsys.readouterr().err
+    assert "--cell-times requires --transitions" in err
 
 
-def test_cell_times_rejects_lunar(monkeypatch, tmp_path):
+def test_cell_times_rejects_lunar(monkeypatch, tmp_path, capsys):
     monkeypatch.setattr(cli_mod, "PhaseEphemeris", _LinearEph)
     rc = cli_mod.main([
         "--start", "2026-01-01", "--end", "2026-03-31", "--divisions", "8",
@@ -229,9 +231,11 @@ def test_cell_times_rejects_lunar(monkeypatch, tmp_path):
         "--cell-times", "--out", str(tmp_path / "h.png"),
     ])
     assert rc == 2
+    err = capsys.readouterr().err
+    assert "--cell-times requires --calendar gregorian" in err
 
 
-def test_cell_times_rejects_non_heatmap_format(monkeypatch, tmp_path):
+def test_cell_times_rejects_non_heatmap_format(monkeypatch, tmp_path, capsys):
     monkeypatch.setattr(cli_mod, "PhaseEphemeris", _LinearEph)
     rc = cli_mod.main([
         "--start", "2026-01-01", "--end", "2026-01-31", "--divisions", "8",
@@ -239,3 +243,5 @@ def test_cell_times_rejects_non_heatmap_format(monkeypatch, tmp_path):
         "--out", str(tmp_path / "c.png"),
     ])
     assert rc == 2
+    err = capsys.readouterr().err
+    assert "--cell-times applies only to --format heatmap" in err
