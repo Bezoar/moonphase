@@ -143,3 +143,33 @@ def test_main_renderer_value_error_is_clean(tmp_path, monkeypatch, capsys):
     ])
     assert rc == 2
     assert "error:" in capsys.readouterr().err
+
+
+def test_main_labels_reach_report_and_events(tmp_path, monkeypatch):
+    captured = {}
+
+    def fake_render(report, out):
+        captured["report"] = report
+
+    monkeypatch.setattr(cli_mod, "PhaseEphemeris", _LinearEph)
+    monkeypatch.setattr(cli_mod.renderers, "get", lambda name: fake_render)
+    rc = cli_mod.main([
+        "--start", "2026-01-01", "--end", "2026-03-01", "--divisions", "4",
+        "--mode", "events", "--format", "json", "--labels", "Dark,,Bright,",
+    ])
+    assert rc == 0
+    rep = captured["report"]
+    assert rep.labels[0] == "Dark" and rep.labels[2] == "Bright"
+    assert rep.labels[1] == "First Quarter"        # blank -> built-in
+    names = {e.index: e.name for e in rep.events if e.kind == "center"}
+    assert names.get(0) == "Dark" and names.get(2) == "Bright"
+
+
+def test_main_labels_bad_file_is_clean_error(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(cli_mod, "PhaseEphemeris", _LinearEph)
+    rc = cli_mod.main([
+        "--start", "2026-01-01", "--end", "2026-02-01", "--divisions", "4",
+        "--mode", "events", "--format", "json", "--labels", f"@{tmp_path / 'nope.txt'}",
+    ])
+    assert rc == 2
+    assert "error:" in capsys.readouterr().err
