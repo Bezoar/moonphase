@@ -3,12 +3,14 @@ strip per lunation). Tinted by illuminated fraction or by microphase index."""
 
 from __future__ import annotations
 
+from contextlib import nullcontext
 from datetime import date
 
-from ..heatmap_layout import day_cells, lunations, principal_phase_days
+from ..heatmap_layout import day_cells, lunations, principal_phase_days, transitions_by_day
 from ..moondisk import illuminated_fraction, lit_polygon
 from ..theme import theme_of
 from . import register
+from .celltext import damped_text_color
 
 _MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
         "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
@@ -33,6 +35,95 @@ def _opts(report):
             o.get("lunar_anchor", "new"))
 
 
+_DPI = 150          # px <-> inch conversion for --size and giant sizing
+_STACK_CAP = 4      # max stacked time lines before a cell collapses to a "N×" badge
+
+
+def _giant_params(report):
+    o = report.options or {}
+    return o.get("size"), o.get("cell_times", False), o.get("font")
+
+
+def _label_of(report):
+    """Return f(entered_index) -> short text: the custom label when --labels was
+    given and non-empty for that slot, else the bare index number."""
+    labels = report.labels
+
+    def label(idx):
+        if labels and idx < len(labels) and labels[idx]:
+            return labels[idx]
+        return str(idx)
+
+    return label
+
+
+def _resolve_font(family):
+    """Resolve ``--font`` to a usable family name. A filesystem path is
+    registered with matplotlib; an unknown family name raises ValueError."""
+    if not family:
+        return None
+    import os
+    from matplotlib import font_manager
+    if os.path.exists(family):
+        font_manager.fontManager.addfont(family)
+        return font_manager.FontProperties(fname=family).get_name()
+    available = {f.name for f in font_manager.fontManager.ttflist}
+    if family not in available:
+        raise ValueError(
+            f"font {family!r} not found; install it or pass a .ttf/.otf path")
+    return family
+
+
+def _measure_line_inches(plt, text, family):
+    """True width/height in inches of ``text`` rendered at 9 pt in ``family``."""
+    fig = plt.figure(dpi=_DPI)
+    try:
+        t = fig.text(0.0, 0.0, text, fontsize=9, family=family)
+        fig.canvas.draw()
+        bb = t.get_window_extent()
+        return bb.width / _DPI, bb.height / _DPI
+    finally:
+        plt.close(fig)
+
+
+def _giant_figsize(plt, day_trans, label_of, n_rows, has_legend, family):
+    """Figure size (inches) that fits the widest 'label @ HH:MM' line and the
+    tallest stacked cell at the 9 pt floor."""
+    lines, max_rows = [], 1
+    for crossings in day_trans.values():
+        max_rows = max(max_rows, min(len(crossings), _STACK_CAP))
+        for idx, local in crossings:
+            lines.append(f"{label_of(idx)} @ {local.strftime('%H:%M')}")
+    longest = max(lines, key=len) if lines else "0 @ 00:00"
+    w_in, h_in = _measure_line_inches(plt, longest, family)
+    cell_w = w_in + 0.12
+    cell_h = max_rows * (h_in * 1.30) + 0.06
+    gutter, title = 1.1, 0.6
+    legend = 0.7 if has_legend else 0.2
+    return gutter + 31 * cell_w, title + n_rows * cell_h + legend
+
+
+def _resolve_figsize(plt, size, cell_times, day_trans, label_of, n_rows,
+                     has_legend, family):
+    """Pick the figure size (inches) or None to keep the default auto-size.
+    Raises ValueError when an explicit --size is below the giant floor."""
+    if cell_times:
+        need_w, need_h = _giant_figsize(plt, day_trans, label_of, n_rows,
+                                        has_legend, family)
+        if size is not None:
+            need_px = (need_w * _DPI, need_h * _DPI)
+            if size[0] < need_px[0] or size[1] < need_px[1]:
+                raise ValueError(
+                    f"--size {size[0]}x{size[1]} is too small for --cell-times "
+                    f"labels at the 9pt minimum; need at least "
+                    f"{round(need_px[0])}x{round(need_px[1])}")
+            return (size[0] / _DPI, size[1] / _DPI)
+        return (need_w, need_h)
+    if size is not None:
+        return (size[0] / _DPI, size[1] / _DPI)
+    return None
+
+
 def _draw_marker(ax, cx, cy, rr, principal_index, theme):
     from matplotlib.patches import Circle, Polygon
     ax.add_patch(Circle((cx, cy), rr * 1.35, facecolor=theme.chip,
@@ -44,6 +135,22 @@ def _draw_marker(ax, cx, cy, rr, principal_index, theme):
         ax.add_patch(Polygon(poly, closed=True, facecolor=theme.moon_lit,
                             edgecolor="none", zorder=6))
     ax.add_patch(Circle((cx, cy), rr, fill=False, edgecolor=theme.moon_ring, lw=0.8, zorder=7))
+
+
+def _draw_cell_times(ax, x0, row, crossings, cell, scheme, tint, label_of):
+    """Draw a day's transition times inside its cell as low-contrast text,
+    collapsing to a 'N×' badge past the stack cap."""
+    a, i = cell
+    color = damped_text_color(_tint(a, i, scheme, tint))
+    cx, cy = x0 + 0.47, row + 0.47
+    if len(crossings) > _STACK_CAP:
+        ax.text(cx, cy, f"{len(crossings)}×", ha="center", va="center",
+                fontsize=9, color=color, zorder=8)
+        return
+    text = "\n".join(f"{label_of(idx)} @ {local.strftime('%H:%M')}"
+                     for idx, local in crossings)
+    ax.text(cx, cy, text, ha="center", va="center", fontsize=9, color=color,
+            zorder=8)
 
 
 def _index_legend(plt, ax, scheme, theme, x0, width, y, h):
@@ -84,43 +191,68 @@ def render(report, out):
 
 
 def _render_gregorian(plt, report, samples, tint, caption, theme, out):
+    import matplotlib
     scheme = report.scheme
+    size, cell_times, font = _giant_params(report)
     cells = {d: (a, i) for d, a, i in day_cells(samples, report.tz)}
     marks = principal_phase_days(samples, report.tz)
     months = sorted({d[:7] for d in cells})
     legend = tint == "index"
-    fig, ax = plt.subplots(figsize=(11, 0.9 + 0.42 * len(months)))
-    try:
-        for row, ym in enumerate(months):
-            y, m = ym[:4], int(ym[5:7])
-            ax.text(-0.6, row + 0.5, f"{_MON[m - 1]} {y}", ha="right", va="center",
-                    fontsize=7, color=theme.fg)
-            ndays = (date(int(y) + (m // 12), (m % 12) + 1, 1) - date(int(y), m, 1)).days
-            for dd in range(1, ndays + 1):
-                key = f"{y}-{m:02d}-{dd:02d}"
-                if key not in cells:
-                    continue
-                a, i = cells[key]
-                ax.add_patch(plt.Rectangle((dd - 1, row), 0.94, 0.94,
-                             facecolor=_tint(a, i, scheme, tint), edgecolor="none"))
-                if key in marks:
-                    _draw_marker(ax, dd - 0.53, row + 0.47, 0.30, marks[key], theme)
-        nrows = len(months)
-        if legend:
-            _index_legend(plt, ax, scheme, theme, 0, 14, nrows + 0.9, 0.6)
-        ax.set_xlim(-0.5, 31)
-        ax.set_ylim(nrows + (2.0 if legend else 0.2), -0.5)
-        ax.set_xticks([0.5, 9.5, 19.5, 29.5])
-        ax.set_xticklabels(["1", "10", "20", "30"], fontsize=7)
-        ax.set_yticks([])
-        years = sorted({d[:4] for d in cells})
-        _finish(plt, fig, ax, theme,
-                f"{', '.join(years)} — {scheme.divisions} microphases · "
-                f"tint: {tint} · times in {caption}")
-        fig.tight_layout()
-        _save(plt, fig, out)
-    finally:
-        plt.close(fig)
+    nrows = len(months)
+
+    family = _resolve_font(font)
+    day_trans = (transitions_by_day(report.events, report.tz, scheme.divisions)
+                 if cell_times else {})
+    label_of = _label_of(report)
+    figsize = _resolve_figsize(plt, size, cell_times, day_trans, label_of,
+                               nrows, legend, family)
+    if figsize is None:
+        figsize = (11, 0.9 + 0.42 * nrows)
+
+    ctx = (matplotlib.rc_context({"font.family": family}) if family
+           else nullcontext())
+    with ctx:
+        fig, ax = plt.subplots(figsize=figsize)
+        try:
+            for row, ym in enumerate(months):
+                y, m = ym[:4], int(ym[5:7])
+                ax.text(-0.6, row + 0.5, f"{_MON[m - 1]} {y}", ha="right",
+                        va="center", fontsize=7, color=theme.fg)
+                ndays = (date(int(y) + (m // 12), (m % 12) + 1, 1)
+                         - date(int(y), m, 1)).days
+                for dd in range(1, ndays + 1):
+                    key = f"{y}-{m:02d}-{dd:02d}"
+                    if key not in cells:
+                        continue
+                    a, i = cells[key]
+                    ax.add_patch(plt.Rectangle((dd - 1, row), 0.94, 0.94,
+                                 facecolor=_tint(a, i, scheme, tint),
+                                 edgecolor="none"))
+                    if key in marks:
+                        if cell_times:
+                            _draw_marker(ax, dd - 0.85, row + 0.18, 0.13,
+                                         marks[key], theme)
+                        else:
+                            _draw_marker(ax, dd - 0.53, row + 0.47, 0.30,
+                                         marks[key], theme)
+                    if cell_times and key in day_trans:
+                        _draw_cell_times(ax, dd - 1, row, day_trans[key],
+                                         cells[key], scheme, tint, label_of)
+            if legend:
+                _index_legend(plt, ax, scheme, theme, 0, 14, nrows + 0.9, 0.6)
+            ax.set_xlim(-0.5, 31)
+            ax.set_ylim(nrows + (2.0 if legend else 0.2), -0.5)
+            ax.set_xticks([0.5, 9.5, 19.5, 29.5])
+            ax.set_xticklabels(["1", "10", "20", "30"], fontsize=7)
+            ax.set_yticks([])
+            years = sorted({d[:4] for d in cells})
+            _finish(plt, fig, ax, theme,
+                    f"{', '.join(years)} — {scheme.divisions} microphases · "
+                    f"tint: {tint} · times in {caption}")
+            fig.tight_layout()
+            _save(plt, fig, out)
+        finally:
+            plt.close(fig)
 
 
 def _render_lunar(plt, report, samples, tint, anchor, caption, theme, out):
