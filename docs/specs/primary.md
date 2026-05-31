@@ -95,15 +95,15 @@ next decade", "the exact UTC instant of every full moon").
   target spacing (Moon advances ~12.2°/day); runtime grows with N. This is documented.
 
 ### 5.4 Time handling *(implemented in Phase 2)*
-- **F4t.1** A single **display timezone** is resolved per run, in priority order: (1) explicit
+- **F4.1** A single **display timezone** is resolved per run, in priority order: (1) explicit
   offset on `--start` (full ISO 8601), (2) discernible system-local timezone, (3) UTC.
-- **F4t.2** Bare dates / naive datetimes are interpreted in the display timezone (→ local midnight
+- **F4.2** Bare dates / naive datetimes are interpreted in the display timezone (→ local midnight
   on a normal machine, not UTC).
-- **F4t.3** All computation is in UTC/TT internally. Output timestamps are rendered in the display
+- **F4.3** All computation is in UTC/TT internally. Output timestamps are rendered in the display
   timezone, emitted as ISO 8601 **with offset**; conversions are DST-aware per instant via
   `datetime.astimezone()` (no extra dependency). Terminal/heatmap group by display-tz calendar
   days.
-- **F4t.4** Every time-bearing render states its timezone explicitly (see F5.x captions).
+- **F4.4** Every time-bearing render states its timezone explicitly (see F5.x captions).
 
 ### 5.5 CLI
 - **F5.1** Entry points: `moonphase` console script and `python -m moonphase.cli`.
