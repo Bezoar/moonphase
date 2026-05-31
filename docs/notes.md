@@ -254,13 +254,9 @@ labels), the `samples/` gallery rendered from the real kernel, and the
 + transition arrows). Versioning jumped straight to 1.0 at release, so the
 old v0.x milestones are folded into "done".
 
-**Possible future work** (out of scope for now):
-
-1. `--timezone` override, `--transitions-only` series mode,
-   numpy-vectorized `phase_to_index`.
-2. HTML renderer (CSS-grid month view), ICS renderer.
-3. `--bundle-ephemeris` wheel variant (kernel embedded).
-4. Accuracy harness vs Meeus/PyEphem for claims in the README.
+**Possible future work** is tracked in one place — the spec's canonical
+[§9 Possible Future Work / Roadmap](specs/primary.md#9-possible-future-work--roadmap).
+Add new ideas there, not here, to avoid drift.
 
 ## 11. Known environment notes (2026-05-29 scaffold session)
 
