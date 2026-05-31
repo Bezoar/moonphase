@@ -6,7 +6,8 @@ Last revised: 2026-05-29 (rev 2 — centered phases, exact events, transition po
 
 > Rev 2 integrates the spec-refinement design brainstormed on 2026-05-29
 > (`docs/superpowers/specs/2026-05-29-spec-refinement-design.md`). Visual reference for the
-> renderers: `docs/mockups-2026-05-29.png`.
+> renderers: the [sample gallery](../../samples/README.md); the original design mockup is
+> archived at `docs/archive/mockups-2026-05-29.png`.
 
 ## 1. Purpose
 

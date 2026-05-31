@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add the `almanac` (moon-disk ribbon, events mode) and `heatmap` (calendar grid, series mode) renderers, with `--tint {illumination,index}` and a `--calendar lunar` / `--lunar-anchor {new,full}` layout, matching the approved mockups (`docs/mockups-2026-05-29.png`).
+**Goal:** Add the `almanac` (moon-disk ribbon, events mode) and `heatmap` (calendar grid, series mode) renderers, with `--tint {illumination,index}` and a `--calendar lunar` / `--lunar-anchor {new,full}` layout, matching the approved mockups (`docs/archive/mockups-2026-05-29.png`).
 
 **Architecture:** A pure `moondisk.py` gives the illuminated fraction and lit-limb polygon (new→empty, full→solid). A pure `heatmap_layout.py` derives day tints, principal-phase days, and lunation segments **from the dense series** (`report.samples`) so renderers need no ephemeris. Renderer-specific flags travel on a new `Report.options` dict; the `render(report, out)` signature is unchanged. The two renderers are matplotlib leaves consuming a `Report`.
 
@@ -12,7 +12,7 @@
 
 ## Scope
 
-Implements spec §5.6 F6.3 (`heatmap`, `almanac`), §5.5 F5.3 (`--tint`, `--calendar`, `--lunar-anchor`). Mockup reference: `docs/mockups-2026-05-29.png` (A=strip-chart already shipped; **B=heatmap**, **C=almanac** are this phase). **Phase 4 (`--labels`) remains out of scope** — `Report.labels` stays unused here.
+Implements spec §5.6 F6.3 (`heatmap`, `almanac`), §5.5 F5.3 (`--tint`, `--calendar`, `--lunar-anchor`). Mockup reference: `docs/archive/mockups-2026-05-29.png` (A=strip-chart already shipped; **B=heatmap**, **C=almanac** are this phase). **Phase 4 (`--labels`) remains out of scope** — `Report.labels` stays unused here.
 
 Matplotlib output is verified with **smoke/structural tests** (file written, non-empty; for SVG, expected text present) plus thorough unit tests of the pure helpers. Visual fidelity is confirmed by rendering sample PNGs at the end.
 
