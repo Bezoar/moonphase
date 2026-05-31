@@ -206,7 +206,13 @@ embedded above the exact `moonphase` command that produced it.
 - **Phase 4 — Custom names** — `--labels` (inline or `@file`, sparse-merged over the
   built-in names) for naming the finer gradations.
 
-All four roadmap phases are implemented.
+All four roadmap phases are implemented. moonphase is **released on PyPI**
+([`moonphase`](https://pypi.org/project/moonphase/), current **v1.1.0**) and the
+specification is marked **production**.
+
+Possible future work (out of scope for now): an explicit `--timezone` override, a
+`--transitions-only` series mode, HTML and ICS renderers, a kernel-bundled wheel variant,
+and an accuracy bench against Meeus/PyEphem.
 
 See [`docs/specs/primary.md`](docs/specs/primary.md) for the full specification,
 [`docs/superpowers/specs/`](docs/superpowers/specs/) for the design write-up, and
