@@ -12,7 +12,7 @@
 
 ## Scope
 
-Implements spec `docs/specs/primary.md` §5.4 (F4t.1–F4t.4) and §5.6 F6.4 (timezone captions), plus the N6 determinism caveat. **Phase 3 (heatmap/almanac/lunar/`--tint`) and Phase 4 (`--labels`) remain out of scope.**
+Implements spec `docs/specs/primary.md` §5.4 (F4.1–F4.4) and §5.6 F6.4 (timezone captions), plus the N6 determinism caveat. **Phase 3 (heatmap/almanac/lunar/`--tint`) and Phase 4 (`--labels`) remain out of scope.**
 
 Phase 1 currently emits UTC and `Report.tz` defaults to `timezone.utc`. This phase changes `Report.tz` to a `DisplayZone` (default = UTC, so existing direct-construction call sites keep UTC behavior).
 
@@ -739,7 +739,7 @@ git commit -m "docs: mark Phase 2 time handling implemented; update README timez
 
 ## Self-review notes (for the implementer)
 
-- **Spec coverage:** Task 1 → F4t.1/F4t.3 conversion + caption primitives; Task 3 → F4t.1/F4t.2 (resolution + bare-date-as-local) and "internals in UTC"; Task 4 → F4t.3 (display-tz ISO-offset output, JSON `timezone` field, day grouping) + F6.4 (mandatory captions); Task 5 → N6 caveat already in spec, docs updated.
+- **Spec coverage:** Task 1 → F4.1/F4.3 conversion + caption primitives; Task 3 → F4.1/F4.2 (resolution + bare-date-as-local) and "internals in UTC"; Task 4 → F4.3 (display-tz ISO-offset output, JSON `timezone` field, day grouping) + F6.4 (mandatory captions); Task 5 → N6 caveat already in spec, docs updated.
 - **Backward compatibility:** `Report.tz` defaults to UTC, so every existing test that builds a `Report` directly keeps UTC output; only the CLI sets a non-UTC zone. The Phase 1 csv header/row tests are unaffected (headers unchanged; timestamps gain `+00:00` which those tests don't assert on).
 - **Type consistency:** `DisplayZone` API (`resolve`, `to_utc`, `to_display`, `caption`, `.kind`) is used identically in `cli.py`, `report.py`, all three renderers, and tests.
 - **Determinism note:** local-zone tests force `TZ` + `time.tzset()` for reproducibility; production local resolution depends on the host zone (documented in spec N6).
