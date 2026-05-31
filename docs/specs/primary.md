@@ -1,7 +1,7 @@
 # moonphase — Specification
 
-Status: **draft**
-Owner: project author
+Status: **production**
+Owner: Mark Welch
 Last revised: 2026-05-29 (rev 2 — centered phases, exact events, transition points, chart designs)
 
 > Rev 2 integrates the spec-refinement design brainstormed on 2026-05-29
