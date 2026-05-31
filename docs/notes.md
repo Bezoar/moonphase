@@ -84,7 +84,7 @@ emitting one row per microphase transition. The fixed-cadence approach:
 - Is fast enough that even sub-hour cadences over a year are trivial.
 
 A future `--transitions-only` mode (one row per microphase boundary
-crossing) is a clear v0.2 candidate.
+crossing) is a clear candidate for later work (see §10).
 
 ### 2.6 The non-integer-step edge case
 `MicrophaseScheme.from_step(7.0)` is legal: 360 / 7 ≈ 51.43, so we
@@ -208,18 +208,21 @@ deliberately tiny rather than pulling in `pytimeparse` or similar.
 
 ## 8. Verified behavior
 
-- `pytest -q` → 4 passed (microphase math only — ephemeris tests are
-  intentionally deferred until we have a deterministic, offline-able
-  fixture or a small embedded kernel for CI).
+- `pytest -q` → 115 passed, covering microphase math, event root-finding,
+  every renderer, the CLI, labels, theming, and timezone handling — all
+  **offline via a synthetic linear ephemeris** (no kernel download).
 - `python -c "from moonphase.cli import build_parser; build_parser().parse_args(['--help'])"`
-  → prints help with all four registered formats.
+  → prints help with all six registered formats.
+- The committed [`samples/`](../samples/README.md) gallery is rendered from
+  the **real DE421 kernel** — the manual end-to-end check that download →
+  ephemeris → every chart produces correct, eyeballed output for 2026.
 
-Not yet verified end-to-end:
+Not yet verified in CI (deliberately):
 
-- Full DE421 download + chart generation. Would require either network
-  access on first run, or pre-populating `./data/de421.bsp`.
-- Visual correctness of the matplotlib chart (colormap, axis labels,
-  full-moon alignment with USNO dates).
+- Automated validation against the real Skyfield/DE421 ephemeris — there is
+  still no committed kernel fixture, so the suite can't assert astronomical
+  accuracy (full-moon alignment with USNO dates, etc.) on every run. The
+  `samples/` gallery covers this manually instead.
 
 ## 9. Things to remember when touching the code
 
@@ -244,14 +247,20 @@ Not yet verified end-to-end:
 
 ## 10. Roadmap (rough order)
 
-1. **v0.1.x**: end-to-end smoke test with bundled kernel; sample
-   `chart.png` for 2026 committed under `examples/`.
-2. **v0.2**: `--timezone`, `--transitions-only`, numpy-vectorized
-   `phase_to_index`.
-3. **v0.3**: HTML renderer (CSS-grid month view), ICS renderer.
-4. **v0.4**: `--bundle-ephemeris` wheel variant; PyPI release.
-5. **v0.5**: optional comparison harness against Meeus/PyEphem for
-   accuracy claims in the README.
+**Shipped:** the four spec phases (centered model + exact events, time
+handling, the `heatmap`/`almanac` renderers with tints/layouts, custom
+labels), the `samples/` gallery rendered from the real kernel, and the
+**PyPI release** — v1.0.0 (2026-05-30), then v1.1.0 (cell-times peak labels
++ transition arrows). Versioning jumped straight to 1.0 at release, so the
+old v0.x milestones are folded into "done".
+
+**Possible future work** (out of scope for now):
+
+1. `--timezone` override, `--transitions-only` series mode,
+   numpy-vectorized `phase_to_index`.
+2. HTML renderer (CSS-grid month view), ICS renderer.
+3. `--bundle-ephemeris` wheel variant (kernel embedded).
+4. Accuracy harness vs Meeus/PyEphem for claims in the README.
 
 ## 11. Known environment notes (2026-05-29 scaffold session)
 

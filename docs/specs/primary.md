@@ -2,7 +2,7 @@
 
 Status: **production**
 Owner: Mark Welch
-Last revised: 2026-05-29 (rev 2 — centered phases, exact events, transition points, chart designs)
+Last revised: 2026-05-30 (rev 3 — promoted to production; shipped on PyPI as v1.1.0)
 
 > Rev 2 integrates the spec-refinement design brainstormed on 2026-05-29
 > (`docs/superpowers/specs/2026-05-29-spec-refinement-design.md`). Visual reference for the
@@ -32,7 +32,7 @@ next decade", "the exact UTC instant of every full moon").
 - **G6** Ship as an installable package with a `moonphase` console script and a stable public API.
 - **G7** Be runnable fully offline once the ephemeris kernel is cached.
 
-## 3. Non-goals (for v0.x)
+## 3. Non-goals
 
 - Rise/set/transit times, eclipses, lunar libration, or distance/angular-size (supermoon) metrics.
 - Observer-location features; UTC + a single display timezone only.
@@ -247,7 +247,7 @@ intentional pre-1.0 breaking change; the registry exists precisely to absorb it.
 - Explicit `--timezone` override (implicit local resolution ships now).
 - `--transitions-only` series mode; numpy-vectorized `phase_to_index`.
 - ICS renderer (events-native), HTML month-grid renderer.
-- `--bundle-ephemeris` wheel variant; PyPI release.
+- `--bundle-ephemeris` wheel variant (kernel embedded). *(PyPI release shipped — v1.1.0.)*
 - Accuracy bench vs Meeus/PyEphem.
 
 ## 10. Risks & open questions
@@ -257,12 +257,12 @@ intentional pre-1.0 breaking change; the registry exists precisely to absorb it.
 - **R2** Matplotlib backend in headless environments — ensure `Agg` when `DISPLAY` is unset.
 - **R3** *(resolved)* Non-integer `--step` tail bin and edge assignment — round-half-up makes
   binning deterministic; the short final arc for non-divisors is accepted behavior.
-- **R4** Public API freeze timing — wait for at least one external consumer of the renderer
-  registry before declaring 1.0.
+- **R4** *(resolved)* Public API freeze — declared 1.0 and shipped on PyPI (now v1.1.0); the
+  renderer registry is the public extensibility seam, and changes follow semver from here.
 - **R5** Event-finding cost grows with N (scan step shrinks). Large N + long ranges may be slow;
   document and revisit if it bites.
 
-## 11. Acceptance criteria for v0.x
+## 11. Acceptance criteria (all met as of v1.1.0)
 
 1. `phase_to_index` is centered: documented edge cases pass on Python 3.10/3.11/3.12, including
    N=16 transition-boundary assignment.

@@ -29,9 +29,12 @@ moonphase --start 2026-01-01 --end 2026-01-31 --step 1deg --format csv --out jan
 moonphase --start 2026-01-01 --end 2026-01-31 --divisions 8 --format terminal
 ```
 
-Note: `pytest` only exercises the microphase bucket math. Ephemeris and renderer tests are
-deliberately deferred until there's a deterministic, offline kernel fixture for CI — so a
-green test run does **not** validate end-to-end chart/ephemeris behavior.
+Note: `pytest` (115 tests) covers the microphase math, event root-finding, the renderers,
+the CLI, labels, theming, and timezone handling — all **offline via a synthetic linear
+ephemeris** (no kernel download). What's still *not* validated in CI is real Skyfield/DE421
+ephemeris accuracy (no committed kernel fixture), so a green run doesn't confirm astronomical
+correctness against USNO. The committed `samples/` gallery is rendered from the real DE421
+kernel and serves as the manual end-to-end check.
 
 ## Architecture
 
