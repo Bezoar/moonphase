@@ -208,12 +208,10 @@ embedded above the exact `moonphase` command that produced it.
 
 All four roadmap phases are implemented.
 
-See [`docs/specs/primary.md`](https://github.com/Bezoar/moonphase/blob/main/docs/specs/primary.md)
-for the full specification,
-[`docs/superpowers/specs/`](https://github.com/Bezoar/moonphase/tree/main/docs/superpowers/specs)
-for the design write-up, and
-[`docs/superpowers/plans/`](https://github.com/Bezoar/moonphase/tree/main/docs/superpowers/plans)
-for the phased implementation plans.
+See [`docs/specs/primary.md`](docs/specs/primary.md) for the full specification,
+[`docs/superpowers/specs/`](docs/superpowers/specs/) for the design write-up, and
+[`docs/superpowers/plans/`](docs/superpowers/plans/) for the phased
+implementation plans.
 
 ## Ephemeris
 
@@ -252,4 +250,4 @@ ruff check src tests
 
 ## License
 
-MIT. See [`LICENSE`](https://github.com/Bezoar/moonphase/blob/main/LICENSE).
+MIT. See [`LICENSE`](LICENSE).
