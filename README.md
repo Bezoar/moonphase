@@ -210,9 +210,8 @@ All four roadmap phases are implemented. moonphase is **released on PyPI**
 ([`moonphase`](https://pypi.org/project/moonphase/), current **v1.1.0**) and the
 specification is marked **production**.
 
-Possible future work (out of scope for now): an explicit `--timezone` override, a
-`--transitions-only` series mode, HTML and ICS renderers, a kernel-bundled wheel variant,
-and an accuracy bench against Meeus/PyEphem.
+Possible future work / the roadmap lives in the spec —
+see [§9 of `docs/specs/primary.md`](docs/specs/primary.md#9-possible-future-work--roadmap).
 
 See [`docs/specs/primary.md`](docs/specs/primary.md) for the full specification,
 [`docs/superpowers/specs/`](docs/superpowers/specs/) for the design write-up, and

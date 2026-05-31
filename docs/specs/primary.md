@@ -242,7 +242,10 @@ renderers.available(mode=None) -> list[str]
 The v0.1 `render(samples, scheme, out)` signature is superseded by `render(report, out)` — the one
 intentional pre-1.0 breaking change; the registry exists precisely to absorb it.
 
-## 9. Out-of-scope but on the roadmap
+## 9. Possible Future Work / Roadmap
+
+The canonical list of out-of-scope-for-now ideas. None are committed; all are
+backward-compatible additions the renderer/CLI seams are designed to absorb.
 
 - Explicit `--timezone` override (implicit local resolution ships now).
 - `--transitions-only` series mode; numpy-vectorized `phase_to_index`.
