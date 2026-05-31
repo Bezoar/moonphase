@@ -168,17 +168,20 @@ Adding a renderer is a single file: define `render(report, out)`, decorate with
 `@register("name", modes={...})`, add one import line — no changes to the CLI or
 the calendar/events core.
 
-## Design mockups
+## Showcase
 
-The image below is the original **design mockup** (rendered in a browser during
-design, with placeholder dates). All three renderer families are now implemented;
-actual output closely follows these targets:
+Two real renders from the [sample gallery](samples/README.md) (tap to open full-size):
 
-![Design mockups of the moonphase renderers — A: analytic strip-chart, B: calendar heatmap (illumination and index tints), C: almanac moon ribbon.](docs/mockups-2026-05-29.png)
+**Almanac ribbon** — the `almanac` renderer: exact phase instants across Jan–Feb 2026
+at 16 divisions, a moon disk at each phase center with transition points dashed between.
 
-- **A · Analytic strip-chart** — the `chart` renderer (Phase 1).
-- **B · Calendar heatmap** (illumination / microphase-index tints + lunar-month layout) — the `heatmap` renderer (Phase 3).
-- **C · Almanac moon ribbon** — the `almanac` renderer (Phase 3).
+[![Almanac moon-disk ribbon, 16 divisions, Jan–Feb 2026](samples/almanac-2026-jan-feb-16div.png)](samples/almanac-2026-jan-feb-16div.png)
+
+**Giant cell-times heatmap** — the `heatmap` renderer with `--cell-times`: the full 2026
+calendar at 16 microphases, index-tinted, every day cell printing its phase-peak times
+(and, with `--transitions`, the `→`-prefixed transition times).
+
+[![Giant cell-times heatmap, 16 divisions, index tint, 2026](samples/heatmap-cell-times-2026-16div.png)](samples/heatmap-cell-times-2026-16div.png)
 
 ## Sample gallery
 
