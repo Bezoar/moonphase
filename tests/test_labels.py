@@ -129,3 +129,15 @@ def test_resolve_labels_still_returns_names_only(tmp_path):
     p = tmp_path / "m.csv"
     p.write_text("Dark Moon,Da\nSickle Moon,Si\n")
     assert resolve_labels(f"@{p}", S16)[0] == "Dark Moon"
+
+
+def test_shipped_moon_mother_csv_resolves():
+    import pathlib
+    root = pathlib.Path(__file__).resolve().parent.parent
+    csv_path = root / "examples" / "moon-mother-16.csv"
+    names, abbrevs = resolve_label_set(f"@{csv_path}", S16)
+    assert names[0] == "Dark Moon" and abbrevs[0] == "Da"
+    assert names[4] == "First Quarter Moon" and abbrevs[4] == "1Q"
+    assert names[8] == "Full Moon" and abbrevs[8] == "Fl"
+    assert names[15] == "Immanent Moon" and abbrevs[15] == "Im"
+    assert all(a for a in abbrevs)        # all 16 slots have a code
