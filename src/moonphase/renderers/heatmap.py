@@ -45,17 +45,34 @@ def _giant_params(report):
     return o.get("size"), o.get("cell_times", False), o.get("font")
 
 
+def _abbrev_at(abbrevs, idx):
+    """The abbreviation for slot ``idx`` if one was provided, else None."""
+    if abbrevs and idx < len(abbrevs) and abbrevs[idx]:
+        return abbrevs[idx]
+    return None
+
+
 def _label_of(report):
-    """Return f(entered_index) -> short text: the custom label when --labels was
-    given and non-empty for that slot, else the bare index number."""
+    """Return f(idx) -> short text: the abbreviation when one was given for that
+    slot, else the custom name, else the bare index number."""
     labels = report.labels
+    abbrevs = report.abbrevs
 
     def label(idx):
+        code = _abbrev_at(abbrevs, idx)
+        if code:
+            return code
         if labels and idx < len(labels) and labels[idx]:
             return labels[idx]
         return str(idx)
 
     return label
+
+
+def _code_of(report, idx):
+    """The compact code drawn inside an index-tint cell: the abbreviation when
+    present for that slot, else the bare index number (never the long name)."""
+    return _abbrev_at(report.abbrevs, idx) or str(idx)
 
 
 def _resolve_font(family):
@@ -185,6 +202,12 @@ def _draw_cell_times(ax, x0, row, crossings, cell, scheme, tint, label_of):
             zorder=8)
 
 
+def _draw_cell_code(ax, x0, row, code, cell_rgb):
+    """Draw a microphase's short code centered in its index-tint cell."""
+    ax.text(x0 + 0.47, row + 0.47, code, ha="center", va="center",
+            fontsize=9, color=damped_text_color(cell_rgb), zorder=8)
+
+
 def _index_legend(plt, ax, scheme, theme, x0, width, y, h, scale=1.0, cap_below=False):
     """A discrete 0..N-1 swatch strip, shown for index tint. ``cap_below`` places
     the end captions under the swatch (giant charts) rather than above it."""
@@ -239,6 +262,7 @@ def _render_gregorian(plt, report, samples, tint, caption, theme, out):
     day_trans = (cell_events_by_day(report.events, report.tz, scheme.divisions)
                  if cell_times else {})
     label_of = _label_of(report)
+    codes = legend and bool(report.abbrevs)      # index tint + abbreviations present
     figsize = _resolve_figsize(plt, size, cell_times, day_trans, label_of,
                                nrows, legend, family)
     if figsize is None:
@@ -262,18 +286,20 @@ def _render_gregorian(plt, report, samples, tint, caption, theme, out):
                     if key not in cells:
                         continue
                     a, i = cells[key]
+                    rgb = _tint(a, i, scheme, tint)
                     ax.add_patch(plt.Rectangle((dd - 1, row), 0.94, 0.94,
-                                 facecolor=_tint(a, i, scheme, tint),
-                                 edgecolor="none"))
-                    # In cell-times mode the principal phases show as plain
-                    # "label HH:MM" text like any other phase, so the
-                    # moon-disk markers are suppressed.
-                    if key in marks and not cell_times:
+                                 facecolor=rgb, edgecolor="none"))
+                    # Principal-day markers are suppressed in cell-times mode and
+                    # in codes mode (the text identifies the phase). Codes vs.
+                    # times are mutually exclusive via the if/elif below.
+                    if key in marks and not cell_times and not codes:
                         _draw_marker(ax, dd - 0.53, row + 0.47, 0.30,
                                      marks[key], theme)
                     if cell_times and key in day_trans:
                         _draw_cell_times(ax, dd - 1, row, day_trans[key],
                                          cells[key], scheme, tint, label_of)
+                    elif codes and not cell_times:
+                        _draw_cell_code(ax, dd - 1, row, _code_of(report, i), rgb)
             # Giant charts label months as proper y-ticks so tight_layout reserves
             # the (enlarged) left margin; the normal heatmap keeps the inline text
             # drawn above and an empty y-axis.

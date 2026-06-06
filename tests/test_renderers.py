@@ -352,3 +352,50 @@ def test_heatmap_title_and_footer(tmp_path):
     out = tmp_path / "htf.png"
     renderers.get("heatmap")(r, str(out))
     assert out.exists() and out.stat().st_size > 0
+
+
+def test_label_of_prefers_abbrev():
+    from moonphase.renderers.heatmap import _label_of
+    r = Report(scheme=MicrophaseScheme.from_divisions(16), mode="series", samples=[],
+               labels=["Dark Moon"] + [None] * 15,
+               abbrevs=["Da"] + [None] * 15)
+    label = _label_of(r)
+    assert label(0) == "Da"          # abbrev wins
+    assert label(1) == "1"           # no abbrev, no name -> index
+
+
+def test_label_of_falls_back_to_name_then_index():
+    from moonphase.renderers.heatmap import _label_of
+    r = Report(scheme=MicrophaseScheme.from_divisions(16), mode="series", samples=[],
+               labels=["Dark Moon"] + [None] * 15)   # no abbrevs at all
+    label = _label_of(r)
+    assert label(0) == "Dark Moon"
+    assert label(2) == "2"
+
+
+def test_label_of_abbrev_none_slot_falls_back_to_name():
+    from moonphase.renderers.heatmap import _label_of
+    r = Report(scheme=MicrophaseScheme.from_divisions(16), mode="series", samples=[],
+               labels=["Dark Moon", "Sickle Moon"] + [None] * 14,
+               abbrevs=["Da", None] + [None] * 14)     # slot 1 has a name but no code
+    label = _label_of(r)
+    assert label(0) == "Da"            # abbrev wins
+    assert label(1) == "Sickle Moon"   # abbrev None at slot -> name
+    assert label(2) == "2"             # neither -> index
+
+
+def _heatmap_report_with_abbrevs(**opts):
+    base = {"tint": "index", "calendar": "gregorian"}
+    base.update(opts)
+    r = _heatmap_report(options=base)
+    codes = ["Da", "Si", "Cr", "Em", "1Q", "Sw", "Gb", "Cu",
+             "Fl", "1W", "Di", "Tr", "LQ", "Yd", "Bl", "Im"]
+    names = [c + " Moon" for c in codes]
+    return Report(scheme=r.scheme, mode="series", samples=r.samples,
+                  events=r.events, options=r.options, labels=names, abbrevs=codes)
+
+
+def test_heatmap_index_with_abbrevs_writes_png(tmp_path):
+    out = tmp_path / "abbr.png"
+    renderers.get("heatmap")(_heatmap_report_with_abbrevs(), str(out))
+    assert out.exists() and out.stat().st_size > 0
