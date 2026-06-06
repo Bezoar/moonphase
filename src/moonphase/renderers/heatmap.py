@@ -3,6 +3,7 @@ strip per lunation). Tinted by illuminated fraction or by microphase index."""
 
 from __future__ import annotations
 
+import math
 from contextlib import nullcontext
 from datetime import date
 
@@ -38,6 +39,8 @@ def _opts(report):
 
 _DPI = 150          # px <-> inch conversion for --size and giant sizing
 _STACK_CAP = 4      # max stacked time lines before a cell collapses to a "N×" badge
+_LEG_ROW_H = 0.7    # data-unit height of one grid-legend row
+_LEG_TOP_PAD = 0.5  # data-unit padding above the grid legend's first row
 
 
 def _giant_params(report):
@@ -106,9 +109,10 @@ def _measure_line_inches(plt, text, family):
         plt.close(fig)
 
 
-def _giant_figsize(plt, day_trans, label_of, n_rows, has_legend, family):
+def _giant_figsize(plt, day_trans, label_of, n_rows, band, family):
     """Figure size (inches) that fits the widest 'label HH:MM' line and the
-    tallest stacked cell at the 9 pt floor."""
+    tallest stacked cell at the 9 pt floor. ``band`` is the bottom-region height
+    in data units (day-of-month axis plus legend)."""
     lines, max_rows = [], 1
     for crossings in day_trans.values():
         max_rows = max(max_rows, min(len(crossings), _STACK_CAP))
@@ -124,19 +128,18 @@ def _giant_figsize(plt, day_trans, label_of, n_rows, has_legend, family):
     # vertical room; taller still when a day needs more than ~one line of text
     cell = max(text_h, cell_w)
     gutter, title = 2.0, 1.2                      # left month-label gutter + title bar (inches)
-    band = _bottom_band(has_legend, giant=True)   # day-of-month axis (+ swatch) region
     # rows ~`cell` inches tall; the bottom band gets the same per-row inches so
     # the enlarged day-axis / legend labels have room.
     return gutter + 31 * cell_w, title + cell * (n_rows + band + 0.5)
 
 
 def _resolve_figsize(plt, size, cell_times, day_trans, label_of, n_rows,
-                     has_legend, family):
+                     band, family):
     """Pick the figure size (inches) or None to keep the default auto-size.
     Raises ValueError when an explicit --size is below the giant floor."""
     if cell_times:
         need_w, need_h = _giant_figsize(plt, day_trans, label_of, n_rows,
-                                        has_legend, family)
+                                        band, family)
         if size is not None:
             need_px = (need_w * _DPI, need_h * _DPI)
             if size[0] < need_px[0] or size[1] < need_px[1]:
@@ -157,6 +160,15 @@ def _bottom_band(has_legend, giant):
     if giant:
         return 3.2 if has_legend else 1.3
     return 1.95 if has_legend else 0.75
+
+
+def _legend_band(has_legend, cell_times, grid):
+    """Data-unit height of the region below the calendar grid (day-of-month axis
+    plus the legend). With a grid legend it grows to hold all legend rows."""
+    if grid:
+        _, rows = grid
+        return _bottom_band(False, cell_times) + _LEG_TOP_PAD + rows * _LEG_ROW_H
+    return _bottom_band(has_legend, cell_times)
 
 
 def _label_scale(figsize):
@@ -206,6 +218,37 @@ def _draw_cell_code(ax, x0, row, code, cell_rgb):
     """Draw a microphase's short code centered in its index-tint cell."""
     ax.text(x0 + 0.47, row + 0.47, code, ha="center", va="center",
             fontsize=9, color=damped_text_color(cell_rgb), zorder=8)
+
+
+def _legend_grid_dims(n):
+    """(cols, rows) for the labelled swatch grid: roughly square, max 4 columns.
+    16 -> 4x4, 8 -> 3x3 (one empty), 4 -> 2x2."""
+    cols = min(4, math.ceil(math.sqrt(n)))
+    rows = math.ceil(n / cols)
+    return cols, rows
+
+
+def _index_grid_legend(plt, ax, scheme, report, theme, top_y, scale):
+    """Column-major labelled legend: per microphase a hue swatch + 'code = name'.
+    Drawn below the calendar grid when index tint has abbreviations. ``top_y`` is
+    the data-y of the first row; rows grow downward."""
+    n = scheme.divisions
+    cols, rows = _legend_grid_dims(n)
+    col_w = 31.0 / cols
+    sw = 0.5
+    fs = round(7 * scale)
+    names = report.labels or []
+    for k in range(n):
+        c, r = divmod(k, rows)                 # column-major fill
+        x = c * col_w + 0.1
+        y = top_y + r * _LEG_ROW_H
+        ax.add_patch(plt.Rectangle((x, y), sw, sw * 0.9,
+                     facecolor=_index_color(k, n), edgecolor="none"))
+        name = names[k] if k < len(names) and names[k] else ""
+        code = _code_of(report, k)
+        text = f"{code} = {name}" if name else code
+        ax.text(x + sw + 0.2, y + sw * 0.45, text, ha="left", va="center",
+                fontsize=fs, color=theme.muted)
 
 
 def _index_legend(plt, ax, scheme, theme, x0, width, y, h, scale=1.0, cap_below=False):
@@ -263,8 +306,10 @@ def _render_gregorian(plt, report, samples, tint, caption, theme, out):
                  if cell_times else {})
     label_of = _label_of(report)
     codes = legend and bool(report.abbrevs)      # index tint + abbreviations present
+    grid = _legend_grid_dims(scheme.divisions) if codes else None
+    band_units = _legend_band(legend, cell_times, grid)
     figsize = _resolve_figsize(plt, size, cell_times, day_trans, label_of,
-                               nrows, legend, family)
+                               nrows, band_units, family)
     if figsize is None:
         figsize = (11, 0.9 + 0.42 * nrows)
     scale = _label_scale(figsize)
@@ -319,13 +364,17 @@ def _render_gregorian(plt, report, samples, tint, caption, theme, out):
                 ax.text(x, nrows + 0.22, str(d), ha="center", va="top",
                         fontsize=round(9 * scale), color=theme.fg)
             if legend:
-                if cell_times:
+                if grid:
+                    legend_top = nrows + _bottom_band(False, cell_times) + _LEG_TOP_PAD
+                    _index_grid_legend(plt, ax, scheme, report, theme,
+                                       legend_top, scale)
+                elif cell_times:
                     _index_legend(plt, ax, scheme, theme, 0, 14, nrows + 1.6, 0.6,
                                   scale=scale, cap_below=True)
                 else:
                     _index_legend(plt, ax, scheme, theme, 0, 14, nrows + 1.05, 0.5)
             ax.set_xlim(-0.5, 31)
-            ax.set_ylim(nrows + _bottom_band(legend, cell_times), -0.5)
+            ax.set_ylim(nrows + band_units, -0.5)
             ax.set_xticks([])
             years = sorted({d[:4] for d in cells})
             auto = (f"{', '.join(years)} — {scheme.divisions} microphases · "
