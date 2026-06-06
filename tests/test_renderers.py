@@ -415,6 +415,18 @@ def test_legend_grid_dims():
     assert _legend_grid_dims(4) == (2, 2)
 
 
+def test_has_codes_requires_a_real_abbrev():
+    from moonphase.renderers.heatmap import _has_codes
+    s = MicrophaseScheme.from_divisions(16)
+    r_none = Report(scheme=s, mode="series", samples=[], abbrevs=None)
+    r_all_none = Report(scheme=s, mode="series", samples=[], abbrevs=[None] * 16)
+    r_some = Report(scheme=s, mode="series", samples=[], abbrevs=["Da"] + [None] * 15)
+    assert not _has_codes(r_none, True)        # no abbrevs at all
+    assert not _has_codes(r_all_none, True)    # all-None list is not "has codes"
+    assert _has_codes(r_some, True)            # at least one real code
+    assert not _has_codes(r_some, False)       # illumination tint -> no codes
+
+
 def test_index_grid_legend_draws_entries():
     import matplotlib.pyplot as plt
     from moonphase.renderers.heatmap import _index_grid_legend
