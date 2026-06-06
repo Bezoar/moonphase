@@ -8,6 +8,7 @@ import numpy as np
 from ..naming import default_name
 from ..theme import style_axes, theme_of
 from . import register
+from .chrome import draw_footer, resolved_title
 
 
 @register("chart", modes={"series", "events"})
@@ -71,8 +72,9 @@ def render(report, out):
 
         start_utc, end_utc = report.span()
         caption = report.tz.caption(start_utc, end_utc)
-        ax.set_title(f"Lunar microphases — {s.divisions} divisions ({step:.3f}° each)\n"
-                     f"times in {caption}", fontsize=10)
+        auto = (f"Lunar microphases — {s.divisions} divisions ({step:.3f}° each)\n"
+                f"times in {caption}")
+        ax.set_title(resolved_title(report, auto), fontsize=10)
         ax.xaxis.set_major_locator(mdates.AutoDateLocator())
         ax.xaxis.set_major_formatter(mdates.ConciseDateFormatter(ax.xaxis.get_major_locator()))
         # daily / weekly minor tick marks for a calendar feel (range-adaptive)
@@ -92,6 +94,7 @@ def render(report, out):
             cbar.outline.set_edgecolor(theme.spine)
 
         fig.tight_layout()
+        draw_footer(fig, report, theme)
         if out:
             fig.savefig(out, dpi=150, facecolor=fig.get_facecolor())
         else:
