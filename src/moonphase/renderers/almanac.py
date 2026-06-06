@@ -6,6 +6,7 @@ from __future__ import annotations
 from ..moondisk import lit_polygon
 from ..theme import theme_of
 from . import register
+from .chrome import draw_footer, resolved_title
 
 
 def _interp_x(when, centers):
@@ -60,9 +61,11 @@ def render(report, out):
         ax.axis("off")
         ax.set_aspect("equal")
         start_utc, end_utc = report.span()
-        ax.set_title(f"Lunar almanac — {report.scheme.divisions} divisions · "
-                     f"times in {tz.caption(start_utc, end_utc)}", fontsize=10, color=theme.fg)
+        auto = (f"Lunar almanac — {report.scheme.divisions} divisions · "
+                f"times in {tz.caption(start_utc, end_utc)}")
+        ax.set_title(resolved_title(report, auto), fontsize=10, color=theme.fg)
         fig.tight_layout()
+        draw_footer(fig, report, theme)
         if out:
             fig.savefig(out, dpi=150, facecolor=fig.get_facecolor())
         else:
