@@ -336,3 +336,11 @@ def test_chart_title_and_footer(tmp_path):
     out = tmp_path / "tf.png"
     renderers.get("chart")(r, str(out))
     assert out.exists() and out.stat().st_size > 0
+
+
+def test_almanac_title_and_footer(tmp_path):
+    r = Report(scheme=S4, mode="events", events=_almanac_report().events,
+               options={"title": "Almanac!", "footer": "cite"})
+    out = tmp_path / "atf.png"
+    renderers.get("almanac")(r, str(out))
+    assert out.exists() and out.stat().st_size > 0
