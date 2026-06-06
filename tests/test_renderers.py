@@ -326,3 +326,13 @@ def test_heatmap_unknown_font_raises(tmp_path):
                                  "font": "NonExistentFontXYZ123"})
     with pytest.raises(ValueError):
         renderers.get("heatmap")(r, str(tmp_path / "x.png"))
+
+
+def test_chart_title_and_footer(tmp_path):
+    samples = [PhaseSample(when=T0, angle_deg=0.0, microphase=0),
+               PhaseSample(when=T0.replace(hour=12), angle_deg=6.0, microphase=0)]
+    r = Report(scheme=S4, mode="series", samples=samples,
+               options={"title": "My Title", "footer": "Source: book\nISBN 123"})
+    out = tmp_path / "tf.png"
+    renderers.get("chart")(r, str(out))
+    assert out.exists() and out.stat().st_size > 0
