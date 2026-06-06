@@ -14,7 +14,7 @@ from .calendar import build_series
 from .displaytz import DisplayZone
 from .ephemeris import PhaseEphemeris
 from .events import build_events
-from .labels import resolve_labels
+from .labels import resolve_label_set
 from .microphase import MicrophaseScheme
 from .report import Report
 
@@ -130,6 +130,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--labels", default=None,
                    help="custom microphase names: inline comma list or @file "
                         "(one per line, or JSON index->name); sparse-merged over built-ins")
+    p.add_argument("--title", default=None,
+                   help="custom chart title (overrides the auto-generated one); "
+                        "chart/heatmap/almanac")
+    p.add_argument("--footer", default=None,
+                   help="free-text footer line drawn under the chart; "
+                        "chart/heatmap/almanac (supports embedded newlines)")
     p.add_argument("--format", default="chart", choices=renderers.available(),
                    help="output renderer")
     p.add_argument("--out", default=None,
@@ -158,7 +164,7 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         mode = resolve_mode(args.format, args.mode, renderers.modes_for)
-        labels = resolve_labels(args.labels, scheme)
+        labels, abbrevs = resolve_label_set(args.labels, scheme)
     except (ValueError, KeyError) as e:
         print(f"error: {e}", file=sys.stderr)
         return 2
@@ -169,7 +175,8 @@ def main(argv: list[str] | None = None) -> int:
 
     options = {"theme": args.theme, "tint": args.tint, "calendar": args.calendar,
                "lunar_anchor": args.lunar_anchor, "size": args.size,
-               "cell_times": args.cell_times, "font": args.font}
+               "cell_times": args.cell_times, "font": args.font,
+               "title": args.title, "footer": args.footer}
 
     eph = PhaseEphemeris(kernel_path=args.ephemeris)
 
@@ -179,7 +186,7 @@ def main(argv: list[str] | None = None) -> int:
                               transitions=args.transitions)
         events = _label_events(events, labels)
         report = Report(scheme=scheme, mode="events", events=events, tz=zone,
-                        options=options, labels=labels)
+                        options=options, labels=labels, abbrevs=abbrevs)
     else:
         samples = build_series(start_utc, end_utc, scheme,
                                sample_step=args.sample, ephemeris=eph)
@@ -187,7 +194,8 @@ def main(argv: list[str] | None = None) -> int:
                               transitions=args.transitions)
         events = _label_events(events, labels)
         report = Report(scheme=scheme, mode="series", samples=samples,
-                        events=events, tz=zone, options=options, labels=labels)
+                        events=events, tz=zone, options=options,
+                        labels=labels, abbrevs=abbrevs)
 
     try:
         renderers.get(args.format)(report, args.out)
