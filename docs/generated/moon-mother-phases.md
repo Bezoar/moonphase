@@ -26,6 +26,9 @@ so this scheme lines up with `--divisions 16` indexing.
 | 15 | Balsamic Moon | `Bl` |
 | 16 | Immanent Moon | `Im` |
 
+These names and codes ship as [`examples/moon-mother-16.csv`](../../examples/moon-mother-16.csv) — use them with
+`moonphase --divisions 16 --format heatmap --tint index --labels @examples/moon-mother-16.csv`.
+
 ## Source
 
 The 16-phase names are drawn from:

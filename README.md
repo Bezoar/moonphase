@@ -122,6 +122,17 @@ moonphase --start 2026-01-01 --end 2026-12-31 --divisions 16 --format chart \
 `index→name` map); unnamed slots fall back to the built-in names (for 4/8 divisions)
 or the microphase index.
 
+A 2-column `@file` CSV (`Full Name,AB` per line, row order = microphase index) also sets a short **abbreviation** per phase. In `--tint index` heatmaps those codes are drawn in each day cell with a labelled swatch legend beneath the grid. See [`examples/moon-mother-16.csv`](examples/moon-mother-16.csv).
+
+```bash
+# 16 Moon-Mother phases: 2-letter codes in each cell + a labelled legend,
+# a custom title, and a book-citation footer
+moonphase --start 2026-01-01 --end 2026-12-31 --divisions 16 --format heatmap \
+          --tint index --labels @examples/moon-mother-16.csv \
+          --title "2026 — Faces of the Moon Mother" \
+          --footer "Names: The Faces of the Moon Mother (ISBN 0-9624716-2-3)" --out mother.png
+```
+
 > **Timezones:** bare dates use your local time; pass an ISO offset
 > (e.g. `2026-01-01T00:00-08:00` or `…Z`) to pin a zone. Output carries the
 > offset, conversions are DST-aware, and every render states its timezone.
@@ -142,7 +153,9 @@ moonphase --start DATE --end DATE
           [--size WxH]               # output image size in px (e.g. 5000x3000)
           [--cell-times]             # heatmap: print transition times in cells (needs --transitions, gregorian)
           [--font NAME|PATH]         # font family name or .ttf/.otf path for heatmap text
-          [--labels SPEC]            # custom names: "A,B,C" or @file (sparse-merge)
+          [--labels SPEC]            # names: "A,B,C" or @file (lines / JSON / name,abbrev CSV)
+          [--title TEXT]             # custom chart title (chart/heatmap/almanac)
+          [--footer TEXT]            # free-text footer line (chart/heatmap/almanac)
           [--out PATH]               # stdout / window if omitted, where applicable
           [--ephemeris PATH.bsp]     # override the bundled-kernel download
 ```
@@ -158,7 +171,7 @@ Renderers are a pluggable registry; each declares which modes it supports.
 | Format | Modes | Output |
 |--------|-------|--------|
 | `chart` | series, events | Matplotlib strip-chart of elongation vs time — centered phase bands, named phases on the left axis / degrees on the right, with exact-event overlays (solid = phase centers, dashed = transitions). File type inferred from `--out` extension (png/svg/pdf/…). |
-| `heatmap` | series | Calendar grid. `--calendar gregorian` (months × days, cells tinted, principal-phase day markers) or `--calendar lunar` (one phase-aligned strip per lunation, dated by `--lunar-anchor`). `--tint illumination` (grayscale by lit fraction) or `--tint index` (a hue per microphase). With `--cell-times` (gregorian + `--transitions` only), each day cell also prints the time(s) a microphase transition took effect, in low-contrast text; the figure is auto-sized so 9 pt text fits (override or enlarge with `--size`, restyle with `--font`). |
+| `heatmap` | series | Calendar grid. `--calendar gregorian` (months × days, cells tinted, principal-phase day markers) or `--calendar lunar` (one phase-aligned strip per lunation, dated by `--lunar-anchor`). `--tint illumination` (grayscale by lit fraction) or `--tint index` (a hue per microphase). With `--cell-times` (gregorian + `--transitions` only), each day cell also prints the time(s) a microphase transition took effect, in low-contrast text; the figure is auto-sized so 9 pt text fits (override or enlarge with `--size`, restyle with `--font`). With `--tint index` and a 2-column `--labels` CSV, each day cell shows the microphase's short code and a labelled swatch legend (`code = name`) is drawn beneath the grid. |
 | `almanac` | events | Ribbon of rendered moon disks at each exact phase center (name + date + time), with transition points dashed between. |
 | `csv` | series, events | Sample rows, or exact-event rows (`time, target_angle_deg, kind, microphase_index, name, …`). |
 | `json` | series, events | `{scheme, samples}` or `{scheme, events}`. |

@@ -132,7 +132,13 @@ next decade", "the exact UTC instant of every full moon").
     file; applied to all heatmap text.
   - `--labels SPEC` — custom microphase names: inline comma list or `@file` (one per line, or JSON
     `index→name`), **sparse-merge** (blank/missing → built-in for N∈{4,8}, else index/angle).
-    *(implemented in Phase 4)*
+    A 2-column `@file` CSV (`Full Name,AB` per row, row order = microphase index 0..N-1) additionally
+    sets a short **abbreviation** per microphase; in `--tint index` heatmaps the code is drawn in
+    each day cell and a labelled swatch legend (`code = name`) replaces the plain hue strip.
+    *(implemented in Phase 4; 2-column CSV abbreviations added in moon-mother branch)*
+  - `--title TEXT` — override the auto-generated title on `chart`, `heatmap`, and `almanac` renders.
+  - `--footer TEXT` — draw a free-text footer line (supports `\n`) beneath `chart`, `heatmap`, and
+    `almanac` renders.
   - `--sample DUR` — cadence; **series mode only**, ignored in events mode (documented).
   - `--format NAME` — renderer; choices populated dynamically from the registry, filtered by mode.
   - `--out PATH` — output path; format inferred from extension where applicable.
