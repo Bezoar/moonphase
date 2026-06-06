@@ -11,6 +11,7 @@ from ..moondisk import illuminated_fraction, lit_polygon
 from ..theme import theme_of
 from . import register
 from .celltext import damped_text_color
+from .chrome import draw_footer, resolved_title
 
 _MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
         "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
@@ -301,10 +302,11 @@ def _render_gregorian(plt, report, samples, tint, caption, theme, out):
             ax.set_ylim(nrows + _bottom_band(legend, cell_times), -0.5)
             ax.set_xticks([])
             years = sorted({d[:4] for d in cells})
-            _finish(plt, fig, ax, theme,
-                    f"{', '.join(years)} — {scheme.divisions} microphases · "
-                    f"tint: {tint} · times in {caption}", scale=scale)
+            auto = (f"{', '.join(years)} — {scheme.divisions} microphases · "
+                    f"tint: {tint} · times in {caption}")
+            _finish(plt, fig, ax, theme, resolved_title(report, auto), scale=scale)
             fig.tight_layout()
+            draw_footer(fig, report, theme, scale=scale)
             _save(plt, fig, out)
         finally:
             plt.close(fig)
@@ -341,10 +343,11 @@ def _render_lunar(plt, report, samples, tint, anchor, caption, theme, out):
         ax.set_ylim(nseg + (1.6 if legend else 0.3), -0.3)
         ax.set_xticks([])
         ax.set_yticks([])
-        _finish(plt, fig, ax, theme,
-                f"Lunar months ({anchor}-anchored) — {scheme.divisions} microphases · "
+        auto = (f"Lunar months ({anchor}-anchored) — {scheme.divisions} microphases · "
                 f"tint: {tint} · times in {caption}")
+        _finish(plt, fig, ax, theme, resolved_title(report, auto))
         fig.tight_layout()
+        draw_footer(fig, report, theme)
         _save(plt, fig, out)
     finally:
         plt.close(fig)

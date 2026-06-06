@@ -344,3 +344,11 @@ def test_almanac_title_and_footer(tmp_path):
     out = tmp_path / "atf.png"
     renderers.get("almanac")(r, str(out))
     assert out.exists() and out.stat().st_size > 0
+
+
+def test_heatmap_title_and_footer(tmp_path):
+    r = _heatmap_report(options={"tint": "index", "calendar": "gregorian",
+                                 "title": "Heat!", "footer": "cite\nline2"})
+    out = tmp_path / "htf.png"
+    renderers.get("heatmap")(r, str(out))
+    assert out.exists() and out.stat().st_size > 0
