@@ -399,3 +399,33 @@ def test_heatmap_index_with_abbrevs_writes_png(tmp_path):
     out = tmp_path / "abbr.png"
     renderers.get("heatmap")(_heatmap_report_with_abbrevs(), str(out))
     assert out.exists() and out.stat().st_size > 0
+
+
+def test_heatmap_abbrevs_cell_times_writes_png(tmp_path):
+    out = tmp_path / "abbr_ct.png"
+    r = _heatmap_report_with_abbrevs(cell_times=True)
+    renderers.get("heatmap")(r, str(out))
+    assert out.exists() and out.stat().st_size > 0
+
+
+def test_legend_grid_dims():
+    from moonphase.renderers.heatmap import _legend_grid_dims
+    assert _legend_grid_dims(16) == (4, 4)
+    assert _legend_grid_dims(8) == (3, 3)
+    assert _legend_grid_dims(4) == (2, 2)
+
+
+def test_index_grid_legend_draws_entries():
+    import matplotlib.pyplot as plt
+    from moonphase.renderers.heatmap import _index_grid_legend
+    from moonphase.theme import get_theme
+    r = _heatmap_report_with_abbrevs()
+    fig, ax = plt.subplots()
+    try:
+        _index_grid_legend(plt, ax, r.scheme, r, get_theme("dark"), top_y=0.0, scale=1.0)
+        texts = [t.get_text() for t in ax.texts]
+        assert "Da = Da Moon" in texts        # code = full name
+        assert "Im = Im Moon" in texts
+        assert len(texts) == 16
+    finally:
+        plt.close(fig)
