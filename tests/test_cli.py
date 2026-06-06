@@ -132,7 +132,8 @@ def test_main_passes_options_to_report(monkeypatch):
     assert rc == 0
     assert captured["opts"] == {"theme": "light", "tint": "index", "calendar": "lunar",
                                 "lunar_anchor": "full", "size": None,
-                                "cell_times": False, "font": None}
+                                "cell_times": False, "font": None,
+                                "title": None, "footer": None}
 
 
 def test_main_theme_defaults_to_dark(monkeypatch):
@@ -248,3 +249,35 @@ def test_cell_times_rejects_non_heatmap_format(monkeypatch, tmp_path, capsys):
     assert rc == 2
     err = capsys.readouterr().err
     assert "--cell-times applies only to --format heatmap" in err
+
+
+def test_main_title_footer_reach_options(tmp_path, monkeypatch):
+    captured = {}
+    monkeypatch.setattr(cli_mod, "PhaseEphemeris", _LinearEph)
+    monkeypatch.setattr(cli_mod.renderers, "get",
+                        lambda name: (lambda report, out: captured.__setitem__("r", report)))
+    rc = cli_mod.main([
+        "--start", "2026-01-01", "--end", "2026-01-10", "--divisions", "16",
+        "--format", "csv", "--title", "My T", "--footer", "Source: book",
+        "--out", str(tmp_path / "o.csv"),
+    ])
+    assert rc == 0
+    assert captured["r"].options["title"] == "My T"
+    assert captured["r"].options["footer"] == "Source: book"
+
+
+def test_main_labels_csv_populates_abbrevs(tmp_path, monkeypatch):
+    csvf = tmp_path / "m.csv"
+    csvf.write_text("Dark Moon,Da\nSickle Moon,Si\n")
+    captured = {}
+    monkeypatch.setattr(cli_mod, "PhaseEphemeris", _LinearEph)
+    monkeypatch.setattr(cli_mod.renderers, "get",
+                        lambda name: (lambda report, out: captured.__setitem__("r", report)))
+    rc = cli_mod.main([
+        "--start", "2026-01-01", "--end", "2026-01-10", "--divisions", "16",
+        "--format", "csv", "--labels", f"@{csvf}", "--out", str(tmp_path / "o.csv"),
+    ])
+    assert rc == 0
+    assert captured["r"].labels[0] == "Dark Moon"
+    assert captured["r"].abbrevs[0] == "Da"
+    assert captured["r"].abbrevs[2] is None
