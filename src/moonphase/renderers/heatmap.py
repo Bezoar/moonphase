@@ -228,6 +228,13 @@ def _legend_grid_dims(n):
     return cols, rows
 
 
+def _has_codes(report, legend):
+    """True when index-tint cells/legend should show codes: index tint AND at
+    least one microphase actually has an abbreviation (a list of all-None
+    abbrevs — e.g. a CSV with empty second columns — does not count)."""
+    return legend and any(report.abbrevs or [])
+
+
 def _index_grid_legend(plt, ax, scheme, report, theme, top_y, scale):
     """Column-major labelled legend: per microphase a hue swatch + 'code = name'.
     Drawn below the calendar grid when index tint has abbreviations. ``top_y`` is
@@ -305,7 +312,7 @@ def _render_gregorian(plt, report, samples, tint, caption, theme, out):
     day_trans = (cell_events_by_day(report.events, report.tz, scheme.divisions)
                  if cell_times else {})
     label_of = _label_of(report)
-    codes = legend and bool(report.abbrevs)      # index tint + abbreviations present
+    codes = _has_codes(report, legend)
     grid = _legend_grid_dims(scheme.divisions) if codes else None
     band_units = _legend_band(legend, cell_times, grid)
     figsize = _resolve_figsize(plt, size, cell_times, day_trans, label_of,
@@ -412,6 +419,8 @@ def _render_lunar(plt, report, samples, tint, anchor, caption, theme, out):
             ax.text(cols / 2, r + 1.02, f"{opp} {seg['mid']}", ha="center", va="top",
                     fontsize=6.5, color=theme.muted)
         nseg = len(segs)
+        # Abbreviation codes and the labelled grid legend are gregorian-only;
+        # the lunar layout always uses the plain index strip.
         if legend:
             _index_legend(plt, ax, scheme, theme, 0, cols, nseg + 0.7, 0.4)
         ax.set_xlim(-1, cols + 1)

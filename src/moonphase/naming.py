@@ -1,7 +1,7 @@
 """Built-in microphase names for the familiar 4- and 8-division schemes.
 
 These are the traditional names used when ``divisions`` is 4 or 8. Custom names
-(the ``--labels`` flag) are sparse-merged over them by ``labels.resolve_labels``.
+(the ``--labels`` flag) are sparse-merged over them by ``labels.resolve_label_set``.
 """
 
 from __future__ import annotations
