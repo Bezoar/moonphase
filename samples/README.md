@@ -191,7 +191,7 @@ moonphase --start 2026-01-01T00:00Z --end 2026-12-31T23:00Z --divisions 16 \
           --transitions --format heatmap --calendar gregorian --tint index --cell-times \
           --labels @examples/moon-mother-16.csv \
           --title "16 Phases of the Moon Mother - 2026" \
-          --footer "Phase names from 'The Faces of the Moon Mother: An Archetypal Cycle' (ISBN 0-9624716-2-3)" \
+          --footer 'Phase names from "The Faces of the Moon Mother: An Archetypal Cycle" by Rowena Pattee Kryder (ISBN 0-9624716-2-3)' \
           --out samples/heatmap-moon-mother-cell-times-2026-16div.png
 ```
 
