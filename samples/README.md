@@ -92,8 +92,10 @@ moonphase --start 2026-01-01T00:00Z --end 2026-12-31T23:00Z \
 
 With `--cell-times` (gregorian), each day cell prints two kinds of moment in
 low-contrast text: a **phase peak** as a bare `code HH:MM` (e.g. `Full 21:23`),
-and — when `--transitions` is also given — the **transition into** a phase as
-`→code HH:MM` (e.g. `→Full 14:25`). `code` is the `--labels` value (here the
+and — when `--transitions` is also given — the **transition into** a phase as a
+bare `Δ HH:MM` (e.g. `Δ 14:25`): the Δ alone marks the change, and the phase
+being entered is named by its `code HH:MM` peak line. `code` is the `--labels`
+value (here the
 compact codes from [`labels-16-compact.txt`](labels-16-compact.txt)) or the bare
 microphase number. Without `--transitions` the cells show peaks only. The
 principal phases (New, 1Q, Full, 3Q) appear as plain text like any other phase —
@@ -168,6 +170,29 @@ A New→Full almanac window with all 16 gradations named from
 moonphase --start 2026-01-18T00:00Z --end 2026-02-02T00:00Z --divisions 16 --format almanac \
           --labels @samples/labels-16.txt \
           --out samples/almanac-2026-newfull-16div-labelled.png
+```
+
+---
+
+## Moon-Mother labels — abbreviation codes, legend & cell times
+
+A 2-column `--labels` CSV (`Full Name,AB` per line) names all 16 microphases **and** gives
+each a short code. With `--tint index --cell-times --transitions` the giant heatmap prints,
+per day, each phase **peak** as a named `code HH:MM` and each **transition into** a phase as a
+bare `Δ HH:MM` (the Δ alone marks the change; the entered phase is named by its peak line). A
+`code = Full Name` swatch legend sits beneath the grid, and `--title` / `--footer` add a
+caption and the source citation. Names are the 16 "Faces of the Moon Mother" from
+[`../examples/moon-mother-16.csv`](../examples/moon-mother-16.csv). **Tap to open full-size.**
+
+[![Moon-Mother cell-times heatmap, 16 divisions, index tint, 2026](heatmap-moon-mother-cell-times-2026-16div.png)](heatmap-moon-mother-cell-times-2026-16div.png)
+
+```bash
+moonphase --start 2026-01-01T00:00Z --end 2026-12-31T23:00Z --divisions 16 \
+          --transitions --format heatmap --calendar gregorian --tint index --cell-times \
+          --labels @examples/moon-mother-16.csv \
+          --title "16 Phases of the Moon Mother - 2026" \
+          --footer "Phase names from 'The Faces of the Moon Mother: An Archetypal Cycle' (ISBN 0-9624716-2-3)" \
+          --out samples/heatmap-moon-mother-cell-times-2026-16div.png
 ```
 
 ---
