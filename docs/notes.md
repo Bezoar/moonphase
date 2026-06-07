@@ -251,8 +251,10 @@ Not yet verified in CI (deliberately):
 handling, the `heatmap`/`almanac` renderers with tints/layouts, custom
 labels), the `samples/` gallery rendered from the real kernel, and the
 **PyPI release** — v1.0.0 (2026-05-30), then v1.1.0 (cell-times peak labels
-+ transition arrows). Versioning jumped straight to 1.0 at release, so the
-old v0.x milestones are folded into "done".
++ transition arrows), then v1.2.0 (Moon-Mother labels: `name,abbrev` CSV →
+`--tint index` in-cell codes + grid legend, `--title`/`--footer`; transition
+marker changed from `→` to `Δ`). Versioning jumped straight to 1.0 at release,
+so the old v0.x milestones are folded into "done".
 
 **Possible future work** is tracked in one place — the spec's canonical
 [§9 Possible Future Work / Roadmap](specs/primary.md#9-possible-future-work--roadmap).

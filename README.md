@@ -220,7 +220,7 @@ embedded above the exact `moonphase` command that produced it.
   built-in names) for naming the finer gradations.
 
 All four roadmap phases are implemented. moonphase is **released on PyPI**
-([`moonphase`](https://pypi.org/project/moonphase/), current **v1.1.0**) and the
+([`moonphase`](https://pypi.org/project/moonphase/), current **v1.2.0**) and the
 specification is marked **production**.
 
 Possible future work / the roadmap lives in the spec —

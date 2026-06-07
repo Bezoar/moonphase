@@ -2,7 +2,7 @@
 
 Status: **production**
 Owner: Mark Welch
-Last revised: 2026-05-30 (rev 3 — promoted to production; shipped on PyPI as v1.1.0)
+Last revised: 2026-06-06 (rev 4 — Moon-Mother labels: name,abbrev CSV, `--tint index` codes + legend, `--title`/`--footer`; shipped on PyPI as v1.2.0)
 
 > Rev 2 integrates the spec-refinement design brainstormed on 2026-05-29
 > (`docs/superpowers/specs/2026-05-29-spec-refinement-design.md`). Visual reference for the
@@ -258,7 +258,8 @@ backward-compatible additions the renderer/CLI seams are designed to absorb.
 - Explicit `--timezone` override (implicit local resolution ships now).
 - `--transitions-only` series mode; numpy-vectorized `phase_to_index`.
 - ICS renderer (events-native), HTML month-grid renderer.
-- `--bundle-ephemeris` wheel variant (kernel embedded). *(PyPI release shipped — v1.1.0.)*
+- `--bundle-ephemeris` wheel variant (kernel embedded). *(PyPI release shipped — v1.2.0.)*
+- Markdown/styled (italic/bold) text in `--title` / `--footer` ([#19](https://github.com/Bezoar/moonphase/issues/19)).
 - Accuracy bench vs Meeus/PyEphem.
 
 ## 10. Risks & open questions
@@ -268,12 +269,12 @@ backward-compatible additions the renderer/CLI seams are designed to absorb.
 - **R2** Matplotlib backend in headless environments — ensure `Agg` when `DISPLAY` is unset.
 - **R3** *(resolved)* Non-integer `--step` tail bin and edge assignment — round-half-up makes
   binning deterministic; the short final arc for non-divisors is accepted behavior.
-- **R4** *(resolved)* Public API freeze — declared 1.0 and shipped on PyPI (now v1.1.0); the
+- **R4** *(resolved)* Public API freeze — declared 1.0 and shipped on PyPI (now v1.2.0); the
   renderer registry is the public extensibility seam, and changes follow semver from here.
 - **R5** Event-finding cost grows with N (scan step shrinks). Large N + long ranges may be slow;
   document and revisit if it bites.
 
-## 11. Acceptance criteria (all met as of v1.1.0)
+## 11. Acceptance criteria (all met as of v1.2.0)
 
 1. `phase_to_index` is centered: documented edge cases pass on Python 3.10/3.11/3.12, including
    N=16 transition-boundary assignment.
