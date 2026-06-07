@@ -192,7 +192,7 @@ at 16 divisions, a moon disk at each phase center with transition points dashed 
 
 **Giant cell-times heatmap** — the `heatmap` renderer with `--cell-times`: the full 2026
 calendar at 16 microphases, index-tinted, every day cell printing its phase-peak times
-(and, with `--transitions`, the `→`-prefixed transition times).
+(and, with `--transitions`, each transition into a phase as a bare `Δ HH:MM`).
 
 [![Giant cell-times heatmap, 16 divisions, index tint, 2026](samples/heatmap-cell-times-2026-16div.png)](samples/heatmap-cell-times-2026-16div.png)
 

@@ -122,7 +122,9 @@ next decade", "the exact UTC instant of every full moon").
     the computed minimum (see `--cell-times`), the renderer raises an error.
   - `--cell-times` — **heatmap only**, requires `--calendar gregorian`. Prints, inside each
     day cell, the local time(s) of phase **peaks** (centers) as bare `LABEL HH:MM`; with
-    `--transitions`, also the **transition into** a phase as `→LABEL HH:MM`. LABEL is the
+    `--transitions`, also the **transition into** a phase as a bare `Δ HH:MM` (the Δ alone
+    marks the change; the entered phase is identified by its peak line, not repeated here).
+    LABEL (on peak lines) is the
     `--labels` value for that microphase or the bare microphase index. A peak's microphase is
     the center's own index; the microphase *entered* by a transition is
     `(transition_index + 1) mod divisions`. Both kinds are merged and sorted by time within a
@@ -170,8 +172,8 @@ next decade", "the exact UTC instant of every full moon").
     cells marked with moon-disk glyphs on a dark backing chip at principal-phase days.
     `--calendar lunar` → one phase-aligned strip per lunation, annotated with Gregorian start
     (left), end (right), and mid/opposite-phase date (below center). `--cell-times`
-    (gregorian only) prints phase-peak times — and, with `--transitions`, transition-into-phase
-    times prefixed `→` — inside each day cell in low-contrast text; figure is auto-sized from
+    (gregorian only) prints phase-peak times — and, with `--transitions`, each transition into
+    a phase as a bare `Δ HH:MM` — inside each day cell in low-contrast text; figure is auto-sized from
     labels at a 9 pt minimum; `--size` overrides; `--font` restyled text.
   - `almanac` (events) — moon-disk ribbon at exact phase centers with name + date + time;
     transition points dashed between (when `--transitions`). Correct lit-limb geometry with
