@@ -290,8 +290,8 @@ def test_heatmap_cell_times_peaks_only_writes_png(tmp_path):
 
 def test_cell_line_format():
     from moonphase.renderers.heatmap import _cell_line
-    assert _cell_line(True, "Full", "14:25") == "→Full 14:25"
-    assert _cell_line(False, "Full", "21:23") == "Full 21:23"
+    assert _cell_line(True, "Full", "14:25") == "Δ 14:25"     # transition: bare Δ, no name
+    assert _cell_line(False, "Full", "21:23") == "Full 21:23"  # peak: named
 
 
 def test_heatmap_cell_times_writes_png(tmp_path):

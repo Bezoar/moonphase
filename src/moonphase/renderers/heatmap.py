@@ -118,9 +118,10 @@ def _giant_figsize(plt, day_trans, label_of, n_rows, band, family):
         max_rows = max(max_rows, min(len(crossings), _STACK_CAP))
         for is_t, idx, local in crossings:
             lines.append(_cell_line(is_t, label_of(idx), local.strftime("%H:%M")))
-    # char-count proxy for pixel width; the arrow-prefixed transition lines are the
-    # widest case. The true extent of this pick is measured by _measure_line_inches.
-    longest = max(lines, key=len) if lines else "→0 00:00"
+    # char-count proxy for pixel width; a named peak line (label + time) is the
+    # widest case now that transitions are a bare 'Δ HH:MM'. The true extent of
+    # this pick is measured by _measure_line_inches.
+    longest = max(lines, key=len) if lines else "00 00:00"
     w_in, h_in = _measure_line_inches(plt, longest, family)
     cell_w = w_in + 0.12                        # horizontal padding (inches)
     text_h = max_rows * (h_in * 1.30) + 0.06    # 1.30x line spacing + baseline pad
@@ -192,9 +193,12 @@ def _draw_marker(ax, cx, cy, rr, principal_index, theme):
 
 
 def _cell_line(is_transition, label, hhmm):
-    """One cell-times line: '→label HH:MM' for a transition *into* a phase,
-    or bare 'label HH:MM' for a phase peak (center)."""
-    return f"{'→' if is_transition else ''}{label} {hhmm}"
+    """One cell-times line: a bare 'Δ HH:MM' for a transition *into* a phase (Δ
+    marks the change; the entered phase is named by its peak line), or
+    'label HH:MM' for a phase peak (center)."""
+    if is_transition:
+        return f"Δ {hhmm}"
+    return f"{label} {hhmm}"
 
 
 def _draw_cell_times(ax, x0, row, crossings, cell, scheme, tint, label_of):
